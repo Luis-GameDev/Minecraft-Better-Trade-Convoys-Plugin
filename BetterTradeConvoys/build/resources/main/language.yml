@@ -1,0 +1,33 @@
+prefix: "&6[BetterTradeConvoys]&r "
+
+errors:
+  no_permission: "&cYou don't have permission."
+  ingame_only: "&cThis command can only be used in-game."
+  unknown_route: "&cUnknown route: &e{route}"
+  invalid_hand_item: "&cHold the exact input items in your main hand and try again."
+  no_matching_trade: "&cThe amount/type in your hand doesn't match any trade for this route."
+  npc_busy: "&cThis NPC is already running a convoy."
+  cooldown_active: "&cCooldown active for &e{route}&c: &e{seconds}s &cremaining."
+  daily_limit_reached: "&cDaily limit reached for &e{route}&c (&e{limit}&c)."
+  no_claims: "&7You have no pending rewards."
+  not_owner: "&cOnly the owner of this convoy can interact here."
+  claim_not_ready: "&cYour convoy is not ready to claim."
+  citizens_missing: "&cCitizens is not installed. This plugin requires Citizens."
+  route_locked_permission: "&cYou don't have permission for route &e{route}"
+
+info:
+  routes_header: "&6Available routes:"
+  route_entry: " &e{id}&7: {name} &8| &7Limit/day: &e{limit} &8| &7CD: &e{cooldown}s"
+  route_gui_title: "&8Select a Route"
+  started: "&aConvoy started: &e{name}&7. Protect your NPC!"
+  resumed_movement: "&aResumed. Stay within &e{radius}&a blocks."
+  paused_distance: "&ePaused. Move within &e{radius}&e blocks to continue."
+  expired_refunded: "&eYour convoy expired. Your input items were refunded via &e/convoy claim&e."
+  completed_ready: "&aYour convoy &e{name} &ais back. Use &e/convoy claim&a."
+  died_lost: "&cYour convoy was destroyed and the goods were lost."
+  claimed: "&aRewards delivered."
+  announced_start: "&6Convoy started by &e{player}&6 on route &e{name}&6."
+
+npc:
+  status_rightclick_owner: "&6Convoy status:&e {phase}"
+  claim_hint_at_goal: "&aRight-click to claim your reward."

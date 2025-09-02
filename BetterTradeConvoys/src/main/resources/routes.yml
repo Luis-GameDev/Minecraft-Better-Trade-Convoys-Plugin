@@ -1,0 +1,29 @@
+routes:
+  iron_to_diamond:
+    display-name: "Iron → Diamond Run"
+    npc-type: VILLAGER
+    waypoint-world: "world"
+
+    # Bewegung
+    speed: 1.15                 # Citizens speedModifier (1.0 = normal)
+    follow-radius: 24           # Max. Distanz Owner ↔ NPC; sonst stoppt der NPC
+    expire-seconds: 900         # Nach 15min bricht die Route ab und refunded
+
+    # Ankündigungen
+    announce-start: true        # Globaler Chat, wenn Run startet
+    trade-delay-seconds: 8      # Wartezeit bei 'trade'-Stopps (reiner Halt)
+
+    # Ablauf: Waypoints & "trade"-Haltepunkte (kein Tausch, nur Wartepunkt)
+    steps:
+      - { x: 100.5, y: 64.0, z: -30.5 }   # Start/Spawn & Home-Pos
+      - { x: 120.5, y: 64.0, z: -30.5 }
+      - trade
+      - { x: 140.5, y: 64.0, z: -15.5 }    # Letzter Waypoint = Ziel & Claim-Ort
+
+    # Handelsdefinition: Input → Output (Tausch findet am Ziel statt)
+    trades:
+      - input:  { material: IRON_INGOT, amount: 20 }
+        output: { material: DIAMOND,    amount: 10 }
+
+    daily-limit: 3
+    cooldown-seconds: 3600

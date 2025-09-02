@@ -1,0 +1,22 @@
+name: BetterTradeConvoys
+main: me.luisgamedev.bettertradeconvoys.BetterTradeConvoys
+version: 1.0
+api-version: '1.20'
+website: 'https://github.com/Luis-GameDev'
+softdepend: [ Citizens ]
+
+commands:
+  convoy:
+    description: Root command for BetterTradeConvoys
+    usage: /convoy <start|claim|routes>
+    aliases: [ convoys, tradeconvoys ]
+
+permissions:
+  bettertradeconvoys.use:
+    default: true
+  bettertradeconvoys.routes.*:
+    description: Access to all routes
+    default: op
+  bettertradeconvoys.admin:
+    description: Admin permissions for reloading, debug, etc.
+    default: op
