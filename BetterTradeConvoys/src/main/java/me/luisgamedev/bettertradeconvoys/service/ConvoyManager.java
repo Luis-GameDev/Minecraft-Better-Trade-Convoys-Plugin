@@ -179,10 +179,8 @@ public class ConvoyManager {
     }
 
     private int findNextIndex(RouteDefinition rd, int from) {
-        for (int i = from + 1; i < rd.steps().size(); i++) {
-            if (rd.steps().get(i) instanceof WaypointStep) return i;
-        }
-        return -1;
+        int next = from + 1;
+        return next < rd.steps().size() ? next : -1;
     }
 
     private void navigateToCurrentStep(NPC npc, ConvoyInstance inst, RouteDefinition rd) {
