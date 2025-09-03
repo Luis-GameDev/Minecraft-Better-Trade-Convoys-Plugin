@@ -162,7 +162,7 @@ public class ConvoyManager {
         // Announce
         if (rd.announceStart()) {
             Bukkit.broadcastMessage(lang.formatRaw("info.announced_start",
-                    lang.p("player", owner.getName(), "name", rd.displayName())));
+                    lang.p("name", rd.displayName())));
         }
 
         owner.sendMessage(lang.format("deposit.prompt",

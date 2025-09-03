@@ -16,7 +16,7 @@ errors:
 
 info:
   started: "&aConvoy initialized. Deposit the items to begin."
-  announced_start: "&6{player}&7 started a convoy: &e{name}"
+  announced_start: "&6The &e{name}&6 convoy has started!"
   paused_distance: "&7Convoy paused (stay within &e{radius}&7 blocks)."
   completed_ready: "&aConvoy finished: &e{name}&a. Right-click to claim."
   claimed: "&aReward received."
