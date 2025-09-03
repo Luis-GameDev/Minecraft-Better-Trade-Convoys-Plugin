@@ -187,8 +187,12 @@ public class ConvoyManager {
         if (step instanceof WaypointStep w) {
             npc.getNavigator().setTarget(w.getLoc());
         } else if (step instanceof TradeStep) {
+            sendStepMessage(inst, step);
             handleTradePauseThenNext(npc, inst, rd);
+            return;
         }
+        // For waypoint steps the message is sent once the NPC actually
+        // arrives at the location in onNavigationComplete.
     }
 
     private void handleTradePauseThenNext(NPC npc, ConvoyInstance inst, RouteDefinition rd) {
@@ -215,6 +219,9 @@ public class ConvoyManager {
 
         if (inst.getPhase() == ConvoyPhase.GOING_TO_DEST) {
             int cur = stepIndexByInstance.getOrDefault(inst.getInstanceId(), 0);
+            RouteStep step = rd.steps().get(cur);
+            sendStepMessage(inst, step);
+
             int next = findNextIndex(rd, cur);
             if (next == -1) {
                 onArrivedAtFinal(npc, inst, rd);
@@ -224,6 +231,15 @@ public class ConvoyManager {
             navigateToCurrentStep(npc, inst, rd);
         } else if (inst.getPhase() == ConvoyPhase.RETURNING) {
             onReturnedHome(npc, inst, rd);
+        }
+    }
+
+    private void sendStepMessage(ConvoyInstance inst, RouteStep step) {
+        String msg = step.getMessage();
+        if (msg == null || msg.isEmpty()) return;
+        Player owner = Bukkit.getPlayer(inst.getOwner());
+        if (owner != null) {
+            owner.sendMessage(msg);
         }
     }
 
