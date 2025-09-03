@@ -1,26 +1,27 @@
 routes:
+  # EXAMPLE ROUTE
   iron_to_diamond:
+    # Name of the route
     display-name: "Iron → Diamond Run"
-    npc-type: VILLAGER
+    npc-ids: [1234, 2343, 4234]
     waypoint-world: "world"
 
-    # Bewegung
+    # Movement
     speed: 1.15                 # Citizens speedModifier (1.0 = normal)
-    follow-radius: 24           # Max. Distanz Owner ↔ NPC; sonst stoppt der NPC
-    expire-seconds: 900         # Nach 15min bricht die Route ab und refunded
+    follow-radius: 24           # Max. Distance Owner ↔ NPC before the NPC stops moving
+    expire-seconds: 900         # The time after which the route will forcefully end and return the initial invested items
 
-    # Ankündigungen
-    announce-start: true        # Globaler Chat, wenn Run startet
-    trade-delay-seconds: 8      # Wartezeit bei 'trade'-Stopps (reiner Halt)
+    announce-start: true        # Whether to announce the start of a route in the global chat
+    trade-delay-seconds: 8      # For how long the NPC will stop at the destination before returning back (won't return back if no coordinates follow after the "trade" step)
 
-    # Ablauf: Waypoints & "trade"-Haltepunkte (kein Tausch, nur Wartepunkt)
+    # Steps/Waypoints that the NPC will walk
     steps:
       - { x: 100.5, y: 64.0, z: -30.5 }   # Start/Spawn & Home-Pos
       - { x: 120.5, y: 64.0, z: -30.5 }
       - trade
-      - { x: 140.5, y: 64.0, z: -15.5 }    # Letzter Waypoint = Ziel & Claim-Ort
+      - { x: 140.5, y: 64.0, z: -15.5 }    # Last Waypoint = End & Claim-Spot
 
-    # Handelsdefinition: Input → Output (Tausch findet am Ziel statt)
+    # Trade definition
     trades:
       - input:  { material: IRON_INGOT, amount: 20 }
         output: { material: DIAMOND,    amount: 10 }
