@@ -15,7 +15,7 @@ errors:
   no_matching_trade: "&cNo matching trade for this item."
 
 info:
-  started: "&aConvoy initialized. Deposit the items to begin."
+  started: "&aAll items received. Convoy starts!"
   announced_start: "&6The &e{name}&6 convoy has started!"
   paused_distance: "&7Convoy paused (stay within &e{radius}&7 blocks)."
   completed_ready: "&aConvoy finished: &e{name}&a. Right-click to claim."
@@ -33,7 +33,5 @@ gui:
   no_routes_here: "&7No routes available at this NPC."
 
 deposit:
-  prompt: "&eDrop &6{amount}x {material} &enear the NPC to start."
   progress: "&7Received &e{got}/{need}x {material}&7..."
-  done: "&aAll items received. Convoy starts!"
   wrong_item: "&cThis route needs &e{amount}x {material}&c."
