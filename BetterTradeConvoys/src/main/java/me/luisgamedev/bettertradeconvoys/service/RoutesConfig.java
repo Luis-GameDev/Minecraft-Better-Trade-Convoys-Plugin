@@ -55,14 +55,23 @@ public class RoutesConfig {
             if (rawSteps != null && !rawSteps.isEmpty()) {
                 for (Object o : rawSteps) {
                     if (o instanceof Map<?, ?> map) {
-                        double x = toDouble(map.get("x"), 0.0);
-                        double y = toDouble(map.get("y"), 64.0);
-                        double z = toDouble(map.get("z"), 0.0);
-                        Location loc = new Location(Bukkit.getWorld(worldName), x, y, z);
-                        steps.add(new WaypointStep(loc));
+                        if (map.containsKey("trade")) {
+                            String msg = map.containsKey("message") ? String.valueOf(map.get("message")) : null;
+                            steps.add(msg == null ? TradeStep.INSTANCE : new TradeStep(msg));
+                        } else {
+                            double x = toDouble(map.get("x"), 0.0);
+                            double y = toDouble(map.get("y"), 64.0);
+                            double z = toDouble(map.get("z"), 0.0);
+                            String msg = map.containsKey("message") ? String.valueOf(map.get("message")) : null;
+                            Location loc = new Location(Bukkit.getWorld(worldName), x, y, z);
+                            steps.add(new WaypointStep(loc, msg));
+                        }
                     } else if (o instanceof String s) {
-                        if ("trade".equalsIgnoreCase(s.trim())) steps.add(TradeStep.INSTANCE);
-                        else plugin.getLogger().warning("Unknown step string '" + s + "' in route '" + id + "'. Ignored.");
+                        if ("trade".equalsIgnoreCase(s.trim())) {
+                            steps.add(TradeStep.INSTANCE);
+                        } else {
+                            plugin.getLogger().warning("Unknown step string '" + s + "' in route '" + id + "'. Ignored.");
+                        }
                     } else {
                         plugin.getLogger().warning("Unsupported step entry in route '" + id + "': " + (o == null ? "null" : o.getClass().getName()));
                     }

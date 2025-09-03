@@ -17,10 +17,10 @@ routes:
 
     # Steps/Waypoints that the NPC will walk
     steps:
-      - { x: 100.5, y: 64.0, z: -30.5 }   # Start/Spawn & Home-Pos
+      - { x: 100.5, y: 64.0, z: -30.5, message: "Let's start the run!" }   # Start/Spawn & Home-Pos
       - { x: 120.5, y: 64.0, z: -30.5 }
-      - trade
-      - { x: 140.5, y: 64.0, z: -15.5 }    # Last Waypoint = End & Claim-Spot
+      - { trade: true, message: "Time to trade." }
+      - { x: 140.5, y: 64.0, z: -15.5, message: "All done, heading back!" }    # Last Waypoint = End & Claim-Spot
 
     # Trade definition
     trades:
