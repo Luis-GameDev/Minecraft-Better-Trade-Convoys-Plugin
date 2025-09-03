@@ -14,9 +14,6 @@ commands:
 permissions:
   bettertradeconvoys.use:
     default: true
-  bettertradeconvoys.routes.*:
-    description: Access to all routes
-    default: op
   bettertradeconvoys.admin:
     description: Admin permissions for reloading, debug, etc.
     default: op

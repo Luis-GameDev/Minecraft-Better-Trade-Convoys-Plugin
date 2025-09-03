@@ -47,7 +47,6 @@ public class CitizensListeners implements Listener {
             return;
         }
 
-        // Ist dieser NPC in irgendeiner Route erlaubt?
         boolean offered = routes.getAll().values().stream().anyMatch(r -> r.npcIds().contains(npc.getId()));
         if (!offered) return;
 
