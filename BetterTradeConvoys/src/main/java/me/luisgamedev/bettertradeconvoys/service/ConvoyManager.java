@@ -77,17 +77,14 @@ public class ConvoyManager {
         RouteDefinition rd = routes.getRoute(routeId);
         if (rd == null) return lang.format("errors.unknown_route", lang.p("route", routeId));
 
-        // NPC ↔ Route erlaubt?
         if (!rd.npcIds().contains(npc.getId())) {
             return lang.format("errors.route_locked_permission", lang.p("route", routeId));
         }
 
-        // Busy?
         if (activeByNpcId.containsKey(npc.getId())) {
             return lang.get("errors.npc_busy");
         }
 
-        // Limits / Cooldown
         int usedToday = progress.getStartsToday(owner.getUniqueId(), routeId);
         if (rd.dailyLimit() > 0 && usedToday >= rd.dailyLimit()) {
             return lang.format("errors.daily_limit_reached", lang.p("route", routeId, "limit", rd.dailyLimit()));
@@ -108,7 +105,6 @@ public class ConvoyManager {
             return lang.format("errors.cooldown_active", lang.p("route", routeId, "seconds", remain));
         }
 
-        // Start/Home aus erstem WaypointStep
         if (rd.steps() == null || rd.steps().isEmpty()) {
             return lang.format("errors.unknown_route", lang.p("route", routeId));
         }
@@ -126,7 +122,6 @@ public class ConvoyManager {
             return lang.format("errors.unknown_route", lang.p("route", routeId));
         }
 
-        // NPC an Start setzen
         try {
             if (npc.isSpawned()) npc.despawn();
             npc.spawn(start);
@@ -135,7 +130,7 @@ public class ConvoyManager {
 
         UUID instanceId = UUID.randomUUID();
 
-        List<ItemStack> carried = new ArrayList<>(); // via Drops gefüllt
+        List<ItemStack> carried = new ArrayList<>();
 
         ConvoyInstance inst = new ConvoyInstance(
                 instanceId,
@@ -170,14 +165,11 @@ public class ConvoyManager {
                     lang.p("player", owner.getName(), "name", rd.displayName())));
         }
 
-        // Spieler auffordern, zu droppen
         owner.sendMessage(lang.format("deposit.prompt",
                 lang.p("amount", trade.input().getAmount(), "material", trade.input().getType().name())));
 
-        // Ticker für Radius/Expire
         startTicker(inst, npc, rd);
 
-        // Fortschritt/Dates jetzt erhöhen (Start initiiert)
         progress.incStartsToday(owner.getUniqueId(), routeId);
         progress.incStartsThisWeek(owner.getUniqueId(), routeId);
         progress.incStartsThisMonth(owner.getUniqueId(), routeId);
@@ -258,7 +250,6 @@ public class ConvoyManager {
         var carried = inst.getCarried();
         if (carried.isEmpty()) { inst.setPhase(ConvoyPhase.EXCHANGED); return; }
 
-        // Wir matchen nur auf den *ersten* Input-Trade (simple Case)
         ItemStack total = mergeStacks(carried);
         for (TradeDefinition t : rd.trades()) {
             if (t.input().getType() == total.getType() && t.input().getAmount() == total.getAmount()) {
@@ -478,7 +469,6 @@ public class ConvoyManager {
         }
     }
 
-    // Wird vom DepositListener aufgerufen
     public void onOwnerDeposited(Player owner, NPC npc, ConvoyInstance inst, ItemStack drop) {
         ItemStack need = requiredInputByInstance.get(inst.getInstanceId());
         if (need == null) return;
@@ -527,17 +517,13 @@ public class ConvoyManager {
         public void setPage(int page) { this.page = page; }
     }
 
-    // GUI-Einstieg – filtert Routen anhand npc-id und Permission
     public void openRoutesGui(Player p, NPC npc) {
         List<RouteDefinition> list = new ArrayList<>();
         for (var e : routes.getAll().values()) {
             RouteDefinition r = e;
             if (!r.npcIds().contains(npc.getId())) continue;
 
-            boolean hasGlobal = p.hasPermission("bettertradeconvoys.routes"); // default: true
-            boolean blocked = p.hasPermission("bettertradeconvoys.routes.block." + r.id());
-            boolean explicitlyAllowed = p.hasPermission("bettertradeconvoys.routes." + r.id());
-            boolean allowedPerm = (hasGlobal || explicitlyAllowed) && !blocked;
+            boolean allowedPerm = p.hasPermission("bettertradeconvoys.use");
             if (!allowedPerm) continue;
 
             list.add(r);

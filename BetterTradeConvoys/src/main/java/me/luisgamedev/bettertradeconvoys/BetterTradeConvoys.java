@@ -29,9 +29,7 @@ public final class BetterTradeConvoys extends JavaPlugin {
         saveDefaultIfMissing("routes.yml");
         saveDefaultIfMissing("language.yml");
 
-        // Manager/Stores laden
-        language = new LanguageManager(this);
-        language.load();
+        language = new LanguageManager(this); language.load();
         routesConfig = new RoutesConfig(this); routesConfig.load();
         progressStore = new PlayerProgressStore(this); progressStore.load();
 
