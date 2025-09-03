@@ -6,6 +6,7 @@ import java.util.Set;
 public record RouteDefinition(
         String id,
         String displayName,
+        String description,
         String worldName,
         List<RouteStep> steps,
         List<TradeDefinition> trades,
