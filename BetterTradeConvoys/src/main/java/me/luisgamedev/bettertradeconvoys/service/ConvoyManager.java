@@ -8,6 +8,7 @@ import net.citizensnpcs.api.ai.event.NavigationCompleteEvent;
 import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -37,6 +38,29 @@ public class ConvoyManager {
     // Deposit-Flow
     private final Map<UUID, ItemStack> requiredInputByInstance = new HashMap<>();
     private final Map<UUID, Integer> depositProgressByInstance = new HashMap<>();
+
+    // GUI handling
+    public static final String ROUTES_GUI_TITLE = "Routes";
+    public static final int GUI_PREV_SLOT = 37;
+    public static final int GUI_NEXT_SLOT = 43;
+    private static final List<Integer> ROUTE_SLOTS;
+
+    static {
+        List<Integer> tmp = new ArrayList<>();
+        for (int row = 1; row <= 4; row++) {
+            for (int col = 1; col <= 7; col++) {
+                int slot = row * 9 + col;
+                if (slot == GUI_PREV_SLOT || slot == GUI_NEXT_SLOT) continue;
+                tmp.add(slot);
+            }
+        }
+        ROUTE_SLOTS = Collections.unmodifiableList(tmp);
+    }
+
+    public static List<Integer> getRouteSlots() { return ROUTE_SLOTS; }
+    public static final int GUI_PAGE_SIZE = ROUTE_SLOTS.size();
+
+    private final Map<UUID, RoutesGuiState> openRouteMenus = new HashMap<>();
 
     public ConvoyManager(BetterTradeConvoys plugin, RoutesConfig routes, PlayerProgressStore progress, ClaimStore claims, LanguageManager lang) {
         this.plugin = plugin;
@@ -482,6 +506,26 @@ public class ConvoyManager {
         }
     }
 
+    public RoutesGuiState getRoutesGui(UUID id) { return openRouteMenus.get(id); }
+    public void closeRoutesGui(UUID id) { openRouteMenus.remove(id); }
+
+    public static class RoutesGuiState {
+        private final NPC npc;
+        private final List<RouteDefinition> routes;
+        private int page;
+
+        public RoutesGuiState(NPC npc, List<RouteDefinition> routes) {
+            this.npc = npc;
+            this.routes = routes;
+            this.page = 0;
+        }
+
+        public NPC getNpc() { return npc; }
+        public List<RouteDefinition> getRoutes() { return routes; }
+        public int getPage() { return page; }
+        public void setPage(int page) { this.page = page; }
+    }
+
     // GUI-Einstieg – filtert Routen anhand npc-id und Permission
     public void openRoutesGui(Player p, NPC npc) {
         List<RouteDefinition> list = new ArrayList<>();
@@ -502,11 +546,65 @@ public class ConvoyManager {
             return;
         }
 
-        // TODO: Dein Inventar-GUI-Renderer; bis dahin einfache Textliste:
-        p.sendMessage("§6Available routes here:");
-        for (RouteDefinition r : list) {
-            p.sendMessage("§e- " + r.displayName() + " (§7id: " + r.id() + "§e)");
+        RoutesGuiState state = new RoutesGuiState(npc, list);
+        openRouteMenus.put(p.getUniqueId(), state);
+        renderRoutesGui(p, state);
+    }
+
+    public void renderRoutesGui(Player p, RoutesGuiState state) {
+        org.bukkit.inventory.Inventory inv = Bukkit.createInventory(null, 54, ROUTES_GUI_TITLE);
+
+        ItemStack glass = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        var gm = glass.getItemMeta();
+        if (gm != null) { gm.setDisplayName(" "); glass.setItemMeta(gm); }
+
+        for (int i = 0; i < inv.getSize(); i++) {
+            int row = i / 9;
+            int col = i % 9;
+            if (row == 0 || row == 5 || col == 0 || col == 8) {
+                inv.setItem(i, glass);
+            }
         }
-        p.sendMessage("§7Nutze /convoy start <routeId> während du diesen NPC ansiehst (oder GUI implementieren).");
+
+        int start = state.getPage() * GUI_PAGE_SIZE;
+        int end = Math.min(start + GUI_PAGE_SIZE, state.getRoutes().size());
+        for (int idx = start; idx < end; idx++) {
+            RouteDefinition r = state.getRoutes().get(idx);
+            ItemStack item;
+            if (!r.trades().isEmpty()) {
+                item = r.trades().get(0).input().clone();
+            } else {
+                item = new ItemStack(Material.PAPER);
+            }
+            var meta = item.getItemMeta();
+            if (meta != null) {
+                meta.setDisplayName("§e" + r.displayName());
+                List<String> lore = new ArrayList<>();
+                lore.add("§7ID: " + r.id());
+                if (!r.trades().isEmpty()) {
+                    ItemStack need = r.trades().get(0).input();
+                    lore.add("§7Needs: " + need.getAmount() + "x " + need.getType().name());
+                }
+                meta.setLore(lore);
+                item.setItemMeta(meta);
+            }
+            int slot = ROUTE_SLOTS.get(idx - start);
+            inv.setItem(slot, item);
+        }
+
+        if (state.getPage() > 0) {
+            ItemStack prev = new ItemStack(Material.ARROW);
+            var pm = prev.getItemMeta();
+            if (pm != null) { pm.setDisplayName("§ePrev"); prev.setItemMeta(pm); }
+            inv.setItem(GUI_PREV_SLOT, prev);
+        }
+        if ((state.getPage() + 1) * GUI_PAGE_SIZE < state.getRoutes().size()) {
+            ItemStack next = new ItemStack(Material.ARROW);
+            var nm = next.getItemMeta();
+            if (nm != null) { nm.setDisplayName("§eNext"); next.setItemMeta(nm); }
+            inv.setItem(GUI_NEXT_SLOT, next);
+        }
+
+        p.openInventory(inv);
     }
 }

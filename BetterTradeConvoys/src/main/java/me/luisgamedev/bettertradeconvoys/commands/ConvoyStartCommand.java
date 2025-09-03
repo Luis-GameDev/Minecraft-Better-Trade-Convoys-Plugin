@@ -5,8 +5,11 @@ import me.luisgamedev.bettertradeconvoys.model.RouteDefinition;
 import me.luisgamedev.bettertradeconvoys.model.TradeDefinition;
 import me.luisgamedev.bettertradeconvoys.service.ConvoyManager;
 import me.luisgamedev.bettertradeconvoys.service.RoutesConfig;
+import net.citizensnpcs.api.CitizensAPI;
+import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -64,9 +67,14 @@ public class ConvoyStartCommand {
             return true;
         }
 
-        p.getInventory().setItemInMainHand(null);
+        Entity target = p.getTargetEntity(5);
+        NPC npc = target == null ? null : CitizensAPI.getNPCRegistry().getNPC(target);
+        if (npc == null) {
+            p.sendMessage("§cYou must look at an NPC to start a convoy.");
+            return true;
+        }
 
-        String result = convoyManager.startConvoy(p, routeId, matched, hand);
+        String result = convoyManager.startConvoy(p, npc, routeId, matched);
         p.sendMessage(result);
         return true;
     }

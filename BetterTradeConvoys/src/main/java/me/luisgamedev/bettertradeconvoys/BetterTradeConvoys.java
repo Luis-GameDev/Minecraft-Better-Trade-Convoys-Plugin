@@ -3,6 +3,7 @@ package me.luisgamedev.bettertradeconvoys;
 import me.luisgamedev.bettertradeconvoys.language.LanguageManager;
 import me.luisgamedev.bettertradeconvoys.listeners.CitizensListeners;
 import me.luisgamedev.bettertradeconvoys.listeners.DepositListener;
+import me.luisgamedev.bettertradeconvoys.listeners.RoutesGuiListener;
 import me.luisgamedev.bettertradeconvoys.service.ClaimStore;
 import me.luisgamedev.bettertradeconvoys.service.ConvoyManager;
 import me.luisgamedev.bettertradeconvoys.service.PlayerProgressStore;
@@ -45,6 +46,7 @@ public final class BetterTradeConvoys extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(new CitizensListeners(convoyManager, language, routesConfig), this);
         Bukkit.getPluginManager().registerEvents(new DepositListener(convoyManager), this);
+        Bukkit.getPluginManager().registerEvents(new RoutesGuiListener(convoyManager, language), this);
 
         if (getCommand("convoy") != null) {
             getCommand("convoy").setExecutor(new ConvoyCommand(this, convoyManager, routesConfig, claimStore, language));
