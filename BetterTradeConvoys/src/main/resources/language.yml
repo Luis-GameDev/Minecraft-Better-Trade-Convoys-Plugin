@@ -9,19 +9,25 @@ errors:
   not_owner: "&cOnly the owner can interact with this convoy."
   claim_not_ready: "&7Nothing to claim yet."
   citizens_missing: "&cCitizens is missing or not enabled."
+  ingame_only: "&cOnly players can use this command."
+  no_permission: "&cYou do not have permission to do that."
+  invalid_hand_item: "&cHold the required item in your main hand."
+  no_matching_trade: "&cNo matching trade for this item."
 
 info:
   started: "&aConvoy initialized. Deposit the items to begin."
-  announced_start: "&6{player}&7 started a convoy: &e{name}"
+  announced_start: "&eThe &6{name}&e convoy has started!"
   paused_distance: "&7Convoy paused (stay within &e{radius}&7 blocks)."
-  resumed_movement: "&aConvoy resumed (within &e{radius}&a blocks)."
   completed_ready: "&aConvoy finished: &e{name}&a. Right-click to claim."
-  claimed: "&aReward added to your claims."
+  claimed: "&aReward received."
   died_lost: "&cYour convoy died and dropped the carried items."
   expired_refunded: "&7Convoy expired. Your input items have been refunded."
+  routes_header: "&6Available routes:"
+  route_entry: "&e{id}&7: {name} &7(Limit: {limit}, Cooldown: {cooldown}s)"
 
 npc:
   claim_hint_at_goal: "&7Right-click the NPC to claim your reward."
+  status_rightclick_owner: "&7Convoy phase: &e{phase}"
 
 gui:
   no_routes_here: "&7No routes available at this NPC."
