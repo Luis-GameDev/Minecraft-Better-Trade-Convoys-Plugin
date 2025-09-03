@@ -155,18 +155,13 @@ public class ConvoyManager {
         pausedByDistance.put(instanceId, false);
         waitingClaim.put(instanceId, false);
 
-        // Require deposit
         requiredInputByInstance.put(instanceId, trade.input().clone());
         depositProgressByInstance.put(instanceId, 0);
 
-        // Announce
         if (rd.announceStart()) {
             Bukkit.broadcastMessage(lang.formatRaw("info.announced_start",
                     lang.p("name", rd.displayName())));
         }
-
-        owner.sendMessage(lang.format("deposit.prompt",
-                lang.p("amount", trade.input().getAmount(), "material", trade.input().getType().name())));
 
         startTicker(inst, npc, rd);
 
@@ -483,7 +478,6 @@ public class ConvoyManager {
 
         if (got >= needAmount) {
             depositProgressByInstance.put(inst.getInstanceId(), needAmount);
-            owner.sendMessage(lang.get("deposit.done"));
 
             RouteDefinition rd = routes.getRoute(inst.getRouteId());
             navigateToCurrentStep(npc, inst, rd);
