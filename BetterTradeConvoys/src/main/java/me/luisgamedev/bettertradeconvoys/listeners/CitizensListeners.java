@@ -42,7 +42,6 @@ public class CitizensListeners implements Listener {
         if (inst != null) {
             Player p = event.getClicker();
             if (!p.getUniqueId().equals(inst.getOwner())) return;
-            p.sendMessage(lang.format("npc.status_rightclick_owner", lang.p("phase", inst.getPhase())));
             manager.handleOwnerRightClickAtNpc(p, npc, inst);
             return;
         }

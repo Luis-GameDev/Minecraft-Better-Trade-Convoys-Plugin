@@ -4,7 +4,7 @@ routes:
     # Name of the route
     display-name: "Iron → Diamond Run"
     description: "Trade iron for diamonds"
-    npc-ids: [1234, 2343, 4234]
+    npc-ids: [0, 1, 2] # NPCs that should have the routes GUI when clicked
     waypoint-world: "world"
 
     # Movement
