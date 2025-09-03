@@ -3,7 +3,7 @@ routes:
   iron_to_diamond:
     # Name of the route
     display-name: "Iron → Diamond Run"
-    npc-id: 4378973456
+    npc-ids: [1234, 2343, 4234]
     waypoint-world: "world"
 
     # Movement

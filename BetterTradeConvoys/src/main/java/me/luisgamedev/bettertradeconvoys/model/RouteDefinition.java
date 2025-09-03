@@ -1,21 +1,22 @@
 package me.luisgamedev.bettertradeconvoys.model;
 
-import org.bukkit.entity.EntityType;
-
 import java.util.List;
+import java.util.Set;
 
 public record RouteDefinition(
         String id,
         String displayName,
-        EntityType npcType,
         String worldName,
-        List<RouteStep> steps,          // <-- neu statt waypoints
+        List<RouteStep> steps,
         List<TradeDefinition> trades,
         int dailyLimit,
+        int weeklyLimit,
+        int monthlyLimit,
         int cooldownSeconds,
-        double speed,                   // citizens speedModifier (z.B. 1.15)
-        double followRadius,            // Distanz in Blöcken
-        int expireSeconds,              // maximale Laufzeit
-        int tradeDelaySeconds,          // Wartezeit bei "trade"-Stops
-        boolean announceStart           // global announce beim Start
+        double speed,
+        double followRadius,
+        int expireSeconds,
+        int tradeDelaySeconds,
+        boolean announceStart,
+        Set<Integer> npcIds
 ) { }

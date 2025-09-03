@@ -1,7 +1,9 @@
 package me.luisgamedev.bettertradeconvoys.listeners;
 
 import me.luisgamedev.bettertradeconvoys.language.LanguageManager;
+import me.luisgamedev.bettertradeconvoys.model.RouteDefinition;
 import me.luisgamedev.bettertradeconvoys.service.ConvoyManager;
+import me.luisgamedev.bettertradeconvoys.service.RoutesConfig;
 import net.citizensnpcs.api.ai.event.NavigationCompleteEvent;
 import net.citizensnpcs.api.event.NPCDeathEvent;
 import net.citizensnpcs.api.event.NPCRightClickEvent;
@@ -13,10 +15,12 @@ public class CitizensListeners implements Listener {
 
     private final ConvoyManager manager;
     private final LanguageManager lang;
+    private final RoutesConfig routes;
 
-    public CitizensListeners(ConvoyManager manager, LanguageManager lang) {
+    public CitizensListeners(ConvoyManager manager, LanguageManager lang, RoutesConfig routes) {
         this.manager = manager;
         this.lang = lang;
+        this.routes = routes;
     }
 
     @EventHandler
@@ -35,12 +39,18 @@ public class CitizensListeners implements Listener {
     public void onRightClick(NPCRightClickEvent event) {
         var npc = event.getNPC();
         var inst = manager.getByNpcId(npc.getId());
-        if (inst == null) return;
+        if (inst != null) {
+            Player p = event.getClicker();
+            if (!p.getUniqueId().equals(inst.getOwner())) return;
+            p.sendMessage(lang.format("npc.status_rightclick_owner", lang.p("phase", inst.getPhase())));
+            manager.handleOwnerRightClickAtNpc(p, npc, inst);
+            return;
+        }
 
-        Player p = event.getClicker();
-        if (!p.getUniqueId().equals(inst.getOwner())) return;
+        // Ist dieser NPC in irgendeiner Route erlaubt?
+        boolean offered = routes.getAll().values().stream().anyMatch(r -> r.npcIds().contains(npc.getId()));
+        if (!offered) return;
 
-        p.sendMessage(lang.format("npc.status_rightclick_owner", lang.p("phase", inst.getPhase())));
-        manager.handleOwnerRightClickAtNpc(p, npc, inst);
+        manager.openRoutesGui(event.getClicker(), npc);
     }
 }

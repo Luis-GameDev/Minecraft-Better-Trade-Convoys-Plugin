@@ -8,19 +8,12 @@ import net.citizensnpcs.api.ai.event.NavigationCompleteEvent;
 import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
 
-/**
- * Kompatibel mit:
- *  - ConvoyInstance: getWaypointIndex()/setWaypointIndex(), getPhase()/setPhase(), getCarried()/setCarried() ...
- *  - ConvoyPhase: GOING_TO_DEST, EXCHANGED, RETURNING, COMPLETE, FAILED
- *  - RouteDefinition mit steps (WaypointStep/TradeStep), speed, followRadius, expireSeconds, tradeDelaySeconds, announceStart
- */
 public class ConvoyManager {
 
     public static final String META_INSTANCE = "btc-instance-id";
@@ -34,13 +27,16 @@ public class ConvoyManager {
     private final Map<Integer, ConvoyInstance> activeByNpcId = new HashMap<>();
     private final Map<UUID, ConvoyInstance> activeByInstance = new HashMap<>();
 
-    // Zusatz-States (damit ConvoyInstance unverändert bleiben kann)
     private final Map<UUID, Location> homeByInstance = new HashMap<>();
     private final Map<UUID, Integer> stepIndexByInstance = new HashMap<>();
     private final Map<UUID, Long> expiresAtByInstance = new HashMap<>();
     private final Map<UUID, Boolean> pausedByDistance = new HashMap<>();
     private final Map<UUID, Boolean> waitingClaim = new HashMap<>();
     private final Map<UUID, BukkitRunnable> tickers = new HashMap<>();
+
+    // Deposit-Flow
+    private final Map<UUID, ItemStack> requiredInputByInstance = new HashMap<>();
+    private final Map<UUID, Integer> depositProgressByInstance = new HashMap<>();
 
     public ConvoyManager(BetterTradeConvoys plugin, RoutesConfig routes, PlayerProgressStore progress, ClaimStore claims, LanguageManager lang) {
         this.plugin = plugin;
@@ -56,23 +52,42 @@ public class ConvoyManager {
         }
     }
 
-    public String startConvoy(Player owner, String routeId, TradeDefinition trade, ItemStack takenFromHand) {
+    public String startConvoy(Player owner, NPC npc, String routeId, TradeDefinition trade) {
         RouteDefinition rd = routes.getRoute(routeId);
         if (rd == null) return lang.format("errors.unknown_route", lang.p("route", routeId));
 
+        // NPC ↔ Route erlaubt?
+        if (!rd.npcIds().contains(npc.getId())) {
+            return lang.format("errors.route_locked_permission", lang.p("route", routeId));
+        }
+
+        // Busy?
+        if (activeByNpcId.containsKey(npc.getId())) {
+            return lang.get("errors.npc_busy");
+        }
+
         // Limits / Cooldown
         int usedToday = progress.getStartsToday(owner.getUniqueId(), routeId);
-        if (usedToday >= rd.dailyLimit()) {
+        if (rd.dailyLimit() > 0 && usedToday >= rd.dailyLimit()) {
             return lang.format("errors.daily_limit_reached", lang.p("route", routeId, "limit", rd.dailyLimit()));
         }
+        int usedWeek = progress.getStartsThisWeek(owner.getUniqueId(), routeId);
+        if (rd.weeklyLimit() > 0 && usedWeek >= rd.weeklyLimit()) {
+            return lang.format("errors.weekly_limit_reached", lang.p("route", routeId, "limit", rd.weeklyLimit()));
+        }
+        int usedMonth = progress.getStartsThisMonth(owner.getUniqueId(), routeId);
+        if (rd.monthlyLimit() > 0 && usedMonth >= rd.monthlyLimit()) {
+            return lang.format("errors.monthly_limit_reached", lang.p("route", routeId, "limit", rd.monthlyLimit()));
+        }
+
         long last = progress.getLastStartMillis(owner.getUniqueId(), routeId);
         long now = System.currentTimeMillis();
-        if ((now - last) / 1000 < rd.cooldownSeconds()) {
+        if (rd.cooldownSeconds() > 0 && (now - last) / 1000 < rd.cooldownSeconds()) {
             long remain = rd.cooldownSeconds() - ((now - last) / 1000);
             return lang.format("errors.cooldown_active", lang.p("route", routeId, "seconds", remain));
         }
 
-        // Start/Home bestimmen = erster WaypointStep
+        // Start/Home aus erstem WaypointStep
         if (rd.steps() == null || rd.steps().isEmpty()) {
             return lang.format("errors.unknown_route", lang.p("route", routeId));
         }
@@ -90,20 +105,16 @@ public class ConvoyManager {
             return lang.format("errors.unknown_route", lang.p("route", routeId));
         }
 
-        // NPC spawnen
-        EntityType type = rd.npcType();
-        NPC npc = CitizensAPI.getNPCRegistry().createNPC(type, "Convoy");
-        npc.setProtected(false);
-        npc.spawn(start);
+        // NPC an Start setzen
         try {
+            if (npc.isSpawned()) npc.despawn();
+            npc.spawn(start);
             npc.getNavigator().getDefaultParameters().speedModifier((float) rd.speed());
-        } catch (Throwable ignored) { }
+        } catch (Throwable ignored) {}
 
         UUID instanceId = UUID.randomUUID();
 
-        // Carried = Input zu Beginn
-        List<ItemStack> carried = new ArrayList<>();
-        carried.add(takenFromHand.clone());
+        List<ItemStack> carried = new ArrayList<>(); // via Drops gefüllt
 
         ConvoyInstance inst = new ConvoyInstance(
                 instanceId,
@@ -111,7 +122,7 @@ public class ConvoyManager {
                 rd.id(),
                 npc.getId(),
                 ConvoyPhase.GOING_TO_DEST,
-                0, // wir nutzen weiterhin waypointIndex-Feld, belegen aber separat stepIndexByInstance
+                0,
                 carried,
                 now
         );
@@ -119,15 +130,18 @@ public class ConvoyManager {
         npc.data().setPersistent(META_INSTANCE, instanceId.toString());
         activeByNpcId.put(npc.getId(), inst);
         activeByInstance.put(instanceId, inst);
-
-        // Zusatz-States
         homeByInstance.put(instanceId, start);
-        int nextIdx = findNextIndex(rd, firstWpIdx); // nächstes Ziel nach dem Start
-        if (nextIdx == -1) nextIdx = firstWpIdx;     // falls nur ein Waypoint existiert
+
+        int nextIdx = findNextIndex(rd, firstWpIdx);
+        if (nextIdx == -1) nextIdx = firstWpIdx;
         stepIndexByInstance.put(instanceId, nextIdx);
         expiresAtByInstance.put(instanceId, now + rd.expireSeconds() * 1000L);
         pausedByDistance.put(instanceId, false);
         waitingClaim.put(instanceId, false);
+
+        // Require deposit
+        requiredInputByInstance.put(instanceId, trade.input().clone());
+        depositProgressByInstance.put(instanceId, 0);
 
         // Announce
         if (rd.announceStart()) {
@@ -135,20 +149,22 @@ public class ConvoyManager {
                     lang.p("player", owner.getName(), "name", rd.displayName())));
         }
 
-        // Loslaufen
-        navigateToCurrentStep(npc, inst, rd);
+        // Spieler auffordern, zu droppen
+        owner.sendMessage(lang.format("deposit.prompt",
+                lang.p("amount", trade.input().getAmount(), "material", trade.input().getType().name())));
 
-        // Ticker
+        // Ticker für Radius/Expire
         startTicker(inst, npc, rd);
 
-        // Fortschritt speichern
+        // Fortschritt/Dates jetzt erhöhen (Start initiiert)
         progress.incStartsToday(owner.getUniqueId(), routeId);
+        progress.incStartsThisWeek(owner.getUniqueId(), routeId);
+        progress.incStartsThisMonth(owner.getUniqueId(), routeId);
         progress.setLastStartMillis(owner.getUniqueId(), routeId, now);
 
         return lang.format("info.started", lang.p("name", rd.displayName()));
     }
 
-    /** Hilfsfunktion: finde den nächsten Step-Index nach 'from', der ein WaypointStep ist; -1 wenn keiner. */
     private int findNextIndex(RouteDefinition rd, int from) {
         for (int i = from + 1; i < rd.steps().size(); i++) {
             if (rd.steps().get(i) instanceof WaypointStep) return i;
@@ -165,7 +181,6 @@ public class ConvoyManager {
         if (step instanceof WaypointStep w) {
             npc.getNavigator().setTarget(w.getLoc());
         } else if (step instanceof TradeStep) {
-            // Trade-Stopp = Wartezeit, danach weiter
             handleTradePauseThenNext(npc, inst, rd);
         }
     }
@@ -185,7 +200,6 @@ public class ConvoyManager {
         }.runTaskLater(plugin, Math.max(0, rd.tradeDelaySeconds()) * 20L);
     }
 
-    /** Citizens Navigation ist an einem Ziel angekommen. */
     public void onNavigationComplete(NPC npc) {
         ConvoyInstance inst = activeByNpcId.get(npc.getId());
         if (inst == null) return;
@@ -203,15 +217,12 @@ public class ConvoyManager {
             stepIndexByInstance.put(inst.getInstanceId(), next);
             navigateToCurrentStep(npc, inst, rd);
         } else if (inst.getPhase() == ConvoyPhase.RETURNING) {
-            // Rückkehr abgeschlossen -> auszahlen und aufräumen
             onReturnedHome(npc, inst, rd);
         }
     }
 
     private void onArrivedAtFinal(NPC npc, ConvoyInstance inst, RouteDefinition rd) {
-        // Tausch am Ziel (Input -> Output)
         exchangeAtDestination(inst, rd);
-        // am Ziel stehen bleiben, auf Claim warten
         waitingClaim.put(inst.getInstanceId(), true);
 
         Player owner = Bukkit.getPlayer(inst.getOwner());
@@ -224,21 +235,29 @@ public class ConvoyManager {
     private void exchangeAtDestination(ConvoyInstance inst, RouteDefinition rd) {
         if (inst.getPhase() != ConvoyPhase.GOING_TO_DEST) return;
         var carried = inst.getCarried();
-        if (carried.isEmpty()) return;
+        if (carried.isEmpty()) { inst.setPhase(ConvoyPhase.EXCHANGED); return; }
 
-        var first = carried.get(0);
+        // Wir matchen nur auf den *ersten* Input-Trade (simple Case)
+        ItemStack total = mergeStacks(carried);
         for (TradeDefinition t : rd.trades()) {
-            if (t.input().getType() == first.getType() && t.input().getAmount() == first.getAmount()) {
+            if (t.input().getType() == total.getType() && t.input().getAmount() == total.getAmount()) {
                 inst.setCarried(Collections.singletonList(t.output().clone()));
                 inst.setPhase(ConvoyPhase.EXCHANGED);
                 return;
             }
         }
-        // kein Match -> trotzdem EXCHANGED (= Ziel erreicht, aber nichts verändert)
         inst.setPhase(ConvoyPhase.EXCHANGED);
     }
 
-    /** Owner rechtsklickt den NPC (Listener ruft diese Methode). */
+    private ItemStack mergeStacks(List<ItemStack> list) {
+        if (list.isEmpty()) return null;
+        ItemStack first = list.get(0).clone();
+        int sum = 0;
+        for (ItemStack s : list) if (s != null && s.getType() == first.getType()) sum += s.getAmount();
+        first.setAmount(sum);
+        return first;
+    }
+
     public void handleOwnerRightClickAtNpc(Player p, NPC npc, ConvoyInstance inst) {
         RouteDefinition rd = routes.getRoute(inst.getRouteId());
         if (rd == null) return;
@@ -253,11 +272,9 @@ public class ConvoyManager {
             return;
         }
 
-        // Belohnung auszahlen
         claims.add(inst.getOwner(), inst.getCarried());
         p.sendMessage(lang.get("info.claimed"));
 
-        // NPC nach Hause und aufräumen
         teleportNpcHome(npc, inst);
         despawnAndRemove(npc, inst);
     }
@@ -271,16 +288,13 @@ public class ConvoyManager {
         despawnAndRemove(npc, inst);
     }
 
-    /** NPC gestorben -> Items droppen, Instanz beenden, NPC an Home neu spawnen (ohne Run). */
     public void onNpcDeath(NPC npc) {
         ConvoyInstance inst = activeByNpcId.get(npc.getId());
         if (inst == null) {
-            // Kein aktiver Run -> respawn an gespeicherter Location
             respawnNpcHome(npc, npc.getStoredLocation());
             return;
         }
 
-        // Droppe aktuell getragene Items
         var loc = npc.getStoredLocation();
         for (ItemStack it : inst.getCarried()) {
             if (it == null) continue;
@@ -288,7 +302,6 @@ public class ConvoyManager {
         }
 
         inst.setPhase(ConvoyPhase.FAILED);
-        // Instanz entfernen, NPC NICHT deregistrieren, damit wir ihn respawnen können
         removeInstanceOnly(npc, inst);
 
         Player owner = Bukkit.getPlayer(inst.getOwner());
@@ -320,7 +333,6 @@ public class ConvoyManager {
     }
 
     private void despawnAndRemove(NPC npc, ConvoyInstance inst) {
-        // alle Ticker/States schließen
         UUID id = inst.getInstanceId();
         BukkitRunnable r = tickers.remove(id);
         if (r != null) r.cancel();
@@ -332,6 +344,8 @@ public class ConvoyManager {
         expiresAtByInstance.remove(id);
         pausedByDistance.remove(id);
         waitingClaim.remove(id);
+        requiredInputByInstance.remove(id);
+        depositProgressByInstance.remove(id);
 
         try {
             if (npc.isSpawned()) npc.despawn();
@@ -350,16 +364,14 @@ public class ConvoyManager {
         expiresAtByInstance.remove(id);
         pausedByDistance.remove(id);
         waitingClaim.remove(id);
+        requiredInputByInstance.remove(id);
+        depositProgressByInstance.remove(id);
         homeByInstance.remove(id);
 
-        // NPC im Registry belassen, damit respawn funktioniert
-        try {
-            npc.data().remove(META_INSTANCE);
-        } catch (Exception ignored) { }
+        try { npc.data().remove(META_INSTANCE); } catch (Exception ignored) { }
     }
 
     public void failAllActiveOnShutdown() {
-        // Nur sauber beenden (keine Random-Stayer)
         for (ConvoyInstance inst : new ArrayList<>(activeByInstance.values())) {
             NPC npc = CitizensAPI.getNPCRegistry().getById(inst.getNpcId());
             if (npc != null) {
@@ -375,9 +387,18 @@ public class ConvoyManager {
         expiresAtByInstance.clear();
         pausedByDistance.clear();
         waitingClaim.clear();
+        requiredInputByInstance.clear();
+        depositProgressByInstance.clear();
     }
 
     public ConvoyInstance getByNpcId(int id) { return activeByNpcId.get(id); }
+
+    public ConvoyInstance getActiveByOwner(UUID uuid) {
+        for (var inst : activeByInstance.values()) {
+            if (inst.getOwner().equals(uuid)) return inst;
+        }
+        return null;
+    }
 
     private void startTicker(ConvoyInstance inst, NPC npc, RouteDefinition rd) {
         BukkitRunnable r = new BukkitRunnable() {
@@ -388,7 +409,6 @@ public class ConvoyManager {
                 long now = System.currentTimeMillis();
                 long expiresAt = expiresAtByInstance.getOrDefault(inst.getInstanceId(), Long.MAX_VALUE);
                 if (now > expiresAt) {
-                    // Ablauf -> Input erstatten
                     claims.add(inst.getOwner(), refundInput(inst, rd));
                     Player o = Bukkit.getPlayer(inst.getOwner());
                     if (o != null) o.sendMessage(lang.get("info.expired_refunded"));
@@ -398,15 +418,11 @@ public class ConvoyManager {
                     return;
                 }
 
-                // Follow-Radius prüfen
                 if (inst.getPhase() == ConvoyPhase.GOING_TO_DEST || inst.getPhase() == ConvoyPhase.EXCHANGED) {
                     boolean paused = pausedByDistance.getOrDefault(inst.getInstanceId(), false);
                     double dist;
-                    try {
-                        dist = npc.getEntity().getLocation().distance(owner.getLocation());
-                    } catch (Throwable t) {
-                        dist = 0.0;
-                    }
+                    try { dist = npc.getEntity().getLocation().distance(owner.getLocation()); }
+                    catch (Throwable t) { dist = 0.0; }
                     boolean tooFar = dist > rd.followRadius();
 
                     if (tooFar && !paused) {
@@ -429,13 +445,68 @@ public class ConvoyManager {
         var carried = inst.getCarried();
         if (carried.isEmpty()) return Collections.emptyList();
         var first = carried.get(0);
-        // Wenn bereits Output getragen wird, versuche den passenden Input zu finden
         for (TradeDefinition t : rd.trades()) {
             if (t.output().getType() == first.getType() && t.output().getAmount() == first.getAmount()) {
                 return Collections.singletonList(t.input().clone());
             }
         }
-        // Fallback: gib zurück, was er gerade trägt
         return new ArrayList<>(carried);
+    }
+
+    // Wird vom DepositListener aufgerufen
+    public void onOwnerDeposited(Player owner, NPC npc, ConvoyInstance inst, ItemStack drop) {
+        ItemStack need = requiredInputByInstance.get(inst.getInstanceId());
+        if (need == null) return;
+
+        if (drop.getType() != need.getType()) {
+            owner.sendMessage(lang.format("deposit.wrong_item", lang.p("amount", need.getAmount(), "material", need.getType().name())));
+            return;
+        }
+        int got = depositProgressByInstance.getOrDefault(inst.getInstanceId(), 0);
+        got += drop.getAmount();
+        int needAmount = need.getAmount();
+
+        inst.getCarried().add(drop.clone());
+
+        if (got >= needAmount) {
+            depositProgressByInstance.put(inst.getInstanceId(), needAmount);
+            owner.sendMessage(lang.get("deposit.done"));
+
+            RouteDefinition rd = routes.getRoute(inst.getRouteId());
+            navigateToCurrentStep(npc, inst, rd);
+        } else {
+            depositProgressByInstance.put(inst.getInstanceId(), got);
+            owner.sendMessage(lang.format("deposit.progress", lang.p(
+                    "got", got, "need", needAmount, "material", need.getType().name()
+            )));
+        }
+    }
+
+    // GUI-Einstieg – filtert Routen anhand npc-id und Permission
+    public void openRoutesGui(Player p, NPC npc) {
+        List<RouteDefinition> list = new ArrayList<>();
+        for (var e : routes.getAll().values()) {
+            RouteDefinition r = e;
+            if (!r.npcIds().contains(npc.getId())) continue;
+
+            boolean hasGlobal = p.hasPermission("bettertradeconvoys.routes"); // default: true
+            boolean blocked = p.hasPermission("bettertradeconvoys.routes.block." + r.id());
+            boolean explicitlyAllowed = p.hasPermission("bettertradeconvoys.routes." + r.id());
+            boolean allowedPerm = (hasGlobal || explicitlyAllowed) && !blocked;
+            if (!allowedPerm) continue;
+
+            list.add(r);
+        }
+        if (list.isEmpty()) {
+            p.sendMessage(lang.get("gui.no_routes_here"));
+            return;
+        }
+
+        // TODO: Dein Inventar-GUI-Renderer; bis dahin einfache Textliste:
+        p.sendMessage("§6Available routes here:");
+        for (RouteDefinition r : list) {
+            p.sendMessage("§e- " + r.displayName() + " (§7id: " + r.id() + "§e)");
+        }
+        p.sendMessage("§7Nutze /convoy start <routeId> während du diesen NPC ansiehst (oder GUI implementieren).");
     }
 }
