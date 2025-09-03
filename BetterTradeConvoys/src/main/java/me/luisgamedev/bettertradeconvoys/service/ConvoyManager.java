@@ -4,7 +4,6 @@ import me.luisgamedev.bettertradeconvoys.BetterTradeConvoys;
 import me.luisgamedev.bettertradeconvoys.language.LanguageManager;
 import me.luisgamedev.bettertradeconvoys.model.*;
 import net.citizensnpcs.api.CitizensAPI;
-import net.citizensnpcs.api.ai.event.NavigationCompleteEvent;
 import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -22,7 +21,6 @@ public class ConvoyManager {
     private final BetterTradeConvoys plugin;
     private final RoutesConfig routes;
     private final PlayerProgressStore progress;
-    private final ClaimStore claims;
     private final LanguageManager lang;
 
     private final Map<Integer, ConvoyInstance> activeByNpcId = new HashMap<>();
@@ -62,11 +60,10 @@ public class ConvoyManager {
 
     private final Map<UUID, RoutesGuiState> openRouteMenus = new HashMap<>();
 
-    public ConvoyManager(BetterTradeConvoys plugin, RoutesConfig routes, PlayerProgressStore progress, ClaimStore claims, LanguageManager lang) {
+    public ConvoyManager(BetterTradeConvoys plugin, RoutesConfig routes, PlayerProgressStore progress, LanguageManager lang) {
         this.plugin = plugin;
         this.routes = routes;
         this.progress = progress;
-        this.claims = claims;
         this.lang = lang;
     }
 
@@ -296,20 +293,27 @@ public class ConvoyManager {
             return;
         }
 
-        claims.add(inst.getOwner(), inst.getCarried());
+        giveOrDrop(p, inst.getCarried());
         p.sendMessage(lang.get("info.claimed"));
 
         teleportNpcHome(npc, inst);
-        despawnAndRemove(npc, inst);
+        removeInstanceOnly(npc, inst);
     }
 
     private void onReturnedHome(NPC npc, ConvoyInstance inst, RouteDefinition rd) {
-        claims.add(inst.getOwner(), inst.getCarried());
         Player owner = Bukkit.getPlayer(inst.getOwner());
         if (owner != null) {
+            giveOrDrop(owner, inst.getCarried());
             owner.sendMessage(lang.format("info.completed_ready", lang.p("name", rd.displayName())));
+        } else {
+            Location loc = npc.getStoredLocation();
+            for (ItemStack it : inst.getCarried()) {
+                if (it == null) continue;
+                loc.getWorld().dropItemNaturally(loc, it.clone());
+            }
         }
-        despawnAndRemove(npc, inst);
+        teleportNpcHome(npc, inst);
+        removeInstanceOnly(npc, inst);
     }
 
     public void onNpcDeath(NPC npc) {
@@ -353,27 +357,6 @@ public class ConvoyManager {
                 if (npc.isSpawned()) npc.despawn();
                 npc.spawn(home);
             }
-        } catch (Exception ignored) { }
-    }
-
-    private void despawnAndRemove(NPC npc, ConvoyInstance inst) {
-        UUID id = inst.getInstanceId();
-        BukkitRunnable r = tickers.remove(id);
-        if (r != null) r.cancel();
-
-        activeByNpcId.remove(npc.getId());
-        activeByInstance.remove(id);
-        homeByInstance.remove(id);
-        stepIndexByInstance.remove(id);
-        expiresAtByInstance.remove(id);
-        pausedByDistance.remove(id);
-        waitingClaim.remove(id);
-        requiredInputByInstance.remove(id);
-        depositProgressByInstance.remove(id);
-
-        try {
-            if (npc.isSpawned()) npc.despawn();
-            CitizensAPI.getNPCRegistry().deregister(npc);
         } catch (Exception ignored) { }
     }
 
@@ -433,11 +416,20 @@ public class ConvoyManager {
                 long now = System.currentTimeMillis();
                 long expiresAt = expiresAtByInstance.getOrDefault(inst.getInstanceId(), Long.MAX_VALUE);
                 if (now > expiresAt) {
-                    claims.add(inst.getOwner(), refundInput(inst, rd));
                     Player o = Bukkit.getPlayer(inst.getOwner());
-                    if (o != null) o.sendMessage(lang.get("info.expired_refunded"));
+                    List<ItemStack> refund = refundInput(inst, rd);
+                    if (o != null) {
+                        giveOrDrop(o, refund);
+                        o.sendMessage(lang.get("info.expired_refunded"));
+                    } else {
+                        Location loc = npc.getStoredLocation();
+                        for (ItemStack it : refund) {
+                            if (it == null) continue;
+                            loc.getWorld().dropItemNaturally(loc, it.clone());
+                        }
+                    }
                     teleportNpcHome(npc, inst);
-                    despawnAndRemove(npc, inst);
+                    removeInstanceOnly(npc, inst);
                     cancel();
                     return;
                 }
@@ -456,7 +448,6 @@ public class ConvoyManager {
                     } else if (!tooFar && paused) {
                         pausedByDistance.put(inst.getInstanceId(), false);
                         navigateToCurrentStep(npc, inst, rd);
-                        owner.sendMessage(lang.format("info.resumed_movement", lang.p("radius", (int) rd.followRadius())));
                     }
                 }
             }
@@ -475,6 +466,16 @@ public class ConvoyManager {
             }
         }
         return new ArrayList<>(carried);
+    }
+
+    private void giveOrDrop(Player p, List<ItemStack> items) {
+        for (ItemStack it : items) {
+            if (it == null) continue;
+            var leftover = p.getInventory().addItem(it);
+            if (!leftover.isEmpty()) {
+                leftover.values().forEach(stack -> p.getWorld().dropItemNaturally(p.getLocation(), stack));
+            }
+        }
     }
 
     // Wird vom DepositListener aufgerufen
@@ -580,7 +581,7 @@ public class ConvoyManager {
             if (meta != null) {
                 meta.setDisplayName("§e" + r.displayName());
                 List<String> lore = new ArrayList<>();
-                lore.add("§7ID: " + r.id());
+                lore.add("§7" + r.description());
                 if (!r.trades().isEmpty()) {
                     ItemStack need = r.trades().get(0).input();
                     lore.add("§7Needs: " + need.getAmount() + "x " + need.getType().name());

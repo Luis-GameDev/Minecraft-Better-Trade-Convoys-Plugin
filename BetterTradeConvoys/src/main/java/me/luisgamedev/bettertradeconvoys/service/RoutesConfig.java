@@ -40,6 +40,7 @@ public class RoutesConfig {
 
             String idLower = id.toLowerCase(Locale.ROOT);
             String display = rs.getString("display-name", id);
+            String description = rs.getString("description", id);
             String worldName = rs.getString("waypoint-world", "world");
 
             double speed = rs.getDouble("speed", 1.0);
@@ -109,6 +110,7 @@ public class RoutesConfig {
             RouteDefinition def = new RouteDefinition(
                     idLower,
                     display,
+                    description,
                     worldName,
                     steps,
                     trades,

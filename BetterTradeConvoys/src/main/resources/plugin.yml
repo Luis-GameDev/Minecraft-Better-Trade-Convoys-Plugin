@@ -8,7 +8,7 @@ softdepend: [ Citizens ]
 commands:
   convoy:
     description: Root command for BetterTradeConvoys
-    usage: /convoy <start|claim|routes>
+    usage: /convoy <start|routes>
     aliases: [ convoys, tradeconvoys ]
 
 permissions:
