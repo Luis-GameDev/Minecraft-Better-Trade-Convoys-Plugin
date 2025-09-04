@@ -6,6 +6,7 @@ import me.luisgamedev.bettertradeconvoys.model.*;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -239,7 +240,7 @@ public class ConvoyManager {
         if (msg == null || msg.isEmpty()) return;
         Player owner = Bukkit.getPlayer(inst.getOwner());
         if (owner != null) {
-            owner.sendMessage(msg);
+            owner.sendMessage(ChatColor.translateAlternateColorCodes('&', msg));
         }
     }
 
