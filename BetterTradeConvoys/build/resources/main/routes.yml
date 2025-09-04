@@ -1,4 +1,5 @@
 routes:
+  # Route identifiers below must be unique
   # EXAMPLE ROUTE
   iron_to_diamond:
     # Name of the route
@@ -8,8 +9,8 @@ routes:
     waypoint-world: "world"
 
     # Movement
-    speed: 1.15                 # Citizens speedModifier (1.0 = normal)
-    follow-radius: 24           # Max. Distance Owner ↔ NPC before the NPC stops moving
+    speed: 1                    # Citizens speedModifier (1.0 = normal)
+    follow-radius: 10           # Max. Distance Owner ↔ NPC before the NPC stops moving
     expire-seconds: 900         # The time after which the route will forcefully end and return the initial invested items
 
     announce-start: true        # Whether to announce the start of a route in the global chat
@@ -17,7 +18,7 @@ routes:
 
     # Steps/Waypoints that the NPC will walk
     steps:
-      - { x: 100.5, y: 64.0, z: -30.5, message: "Let's start the run!" }   # Start/Spawn & Home-Pos
+      - { x: 100.5, y: 64.0, z: -30.5 }   # Start/Spawn & Home-Pos
       - { x: 120.5, y: 64.0, z: -30.5 }
       - { trade: true, message: "Time to trade." }
       - { x: 140.5, y: 64.0, z: -15.5, message: "All done, heading back!" }    # Last Waypoint = End & Claim-Spot
@@ -28,4 +29,62 @@ routes:
         output: { material: DIAMOND,    amount: 10 }
 
     daily-limit: 3
+    weekly-limit: 10
+    monthly-limit: 40
+    cooldown-seconds: 3600
+
+  gold_to_netherite:
+    display-name: "Gold → Netherite Run"
+    description: "Trade gold for netherite"
+    npc-ids: [0, 1, 2]
+    waypoint-world: "world"
+
+    speed: 1
+    follow-radius: 10
+    expire-seconds: 900
+
+    announce-start: true
+    trade-delay-seconds: 8
+
+    steps:
+      - { x: 100.5, y: 64.0, z: -30.5 }   # Start/Spawn & Home-Pos
+      - { x: 120.5, y: 64.0, z: -30.5 }
+      - { trade: true, message: "Time to trade." }
+      - { x: 140.5, y: 64.0, z: -15.5, message: "All done, heading back!" }    # Last Waypoint = End & Claim-Spot
+
+    trades:
+      - input:  { material: GOLD_INGOT, amount: 20 }
+        output: { material: NETHERITE_INGOT, amount: 1 }
+
+    daily-limit: 3
+    weekly-limit: 10
+    monthly-limit: 40
+    cooldown-seconds: 3600
+
+  coal_to_emerald:
+    display-name: "Coal → Emerald Run"
+    description: "Swap coal for emeralds"
+    npc-ids: [0, 1, 2]
+    waypoint-world: "world"
+
+    speed: 1
+    follow-radius: 10
+    expire-seconds: 900
+
+    announce-start: true
+    trade-delay-seconds: 8
+
+    steps:
+      - { x: 100.5, y: 64.0, z: -30.5 }   # Start/Spawn & Home-Pos
+      - { x: 120.5, y: 64.0, z: -30.5 }
+      - { trade: true, message: "Time to trade." }
+      - { x: 140.5, y: 64.0, z: -15.5, message: "All done, heading back!" }    # Last Waypoint = End & Claim-Spot
+
+    trades:
+      - input:  { material: COAL, amount: 32 }
+        output: { material: EMERALD, amount: 8 }
+
+    daily-limit: 3
+    weekly-limit: 10
+    monthly-limit: 40
     cooldown-seconds: 3600

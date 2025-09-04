@@ -30,7 +30,7 @@ npc:
   status_rightclick_owner: "&7Convoy phase: &e{phase}"
 
 gui:
-  no_routes_here: "&7No routes available at this NPC."
+  no_routes_here: "&7No routes available."
 
 deposit:
   progress: "&7Received &e{got}/{need}x {material}&7..."
