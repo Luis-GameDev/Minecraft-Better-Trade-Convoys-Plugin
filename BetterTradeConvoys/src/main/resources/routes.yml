@@ -8,8 +8,8 @@ routes:
     waypoint-world: "world"
 
     # Movement
-    speed: 1.15                 # Citizens speedModifier (1.0 = normal)
-    follow-radius: 24           # Max. Distance Owner ↔ NPC before the NPC stops moving
+    speed: 1                    # Citizens speedModifier (1.0 = normal)
+    follow-radius: 10           # Max. Distance Owner ↔ NPC before the NPC stops moving
     expire-seconds: 900         # The time after which the route will forcefully end and return the initial invested items
 
     announce-start: true        # Whether to announce the start of a route in the global chat
@@ -17,7 +17,7 @@ routes:
 
     # Steps/Waypoints that the NPC will walk
     steps:
-      - { x: 100.5, y: 64.0, z: -30.5, message: "Let's start the run!" }   # Start/Spawn & Home-Pos
+      - { x: 100.5, y: 64.0, z: -30.5 }   # Start/Spawn & Home-Pos
       - { x: 120.5, y: 64.0, z: -30.5 }
       - { trade: true, message: "Time to trade." }
       - { x: 140.5, y: 64.0, z: -15.5, message: "All done, heading back!" }    # Last Waypoint = End & Claim-Spot

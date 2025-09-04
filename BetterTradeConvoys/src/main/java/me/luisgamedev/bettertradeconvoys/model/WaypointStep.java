@@ -6,9 +6,7 @@ public final class WaypointStep implements RouteStep {
     private final Location loc;
     private final String message;
 
-    /**
-     * Creates a waypoint step without a message.
-     */
+
     public WaypointStep(Location loc) {
         this(loc, null);
     }

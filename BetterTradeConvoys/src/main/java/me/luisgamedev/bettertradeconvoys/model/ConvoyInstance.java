@@ -13,7 +13,7 @@ public class ConvoyInstance {
 
     private ConvoyPhase phase;
     private int waypointIndex;
-    private List<ItemStack> carried; // aktuell getragene Items (erst Input, nach Tausch Output)
+    private List<ItemStack> carried;
 
     private long startedAt;
 
