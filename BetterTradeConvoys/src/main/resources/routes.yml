@@ -28,4 +28,6 @@ routes:
         output: { material: DIAMOND,    amount: 10 }
 
     daily-limit: 3
+    weekly-limit: 10
+    monthly-limit: 40
     cooldown-seconds: 3600
