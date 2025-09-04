@@ -78,10 +78,6 @@ public class ConvoyManager {
         RouteDefinition rd = routes.getRoute(routeId);
         if (rd == null) return lang.format("errors.unknown_route", lang.p("route", routeId));
 
-        if (!rd.npcIds().contains(npc.getId())) {
-            return lang.format("errors.route_locked_permission", lang.p("route", routeId));
-        }
-
         if (activeByNpcId.containsKey(npc.getId())) {
             return lang.get("errors.npc_busy");
         }
@@ -527,16 +523,12 @@ public class ConvoyManager {
     }
 
     public void openRoutesGui(Player p, NPC npc) {
-        List<RouteDefinition> list = new ArrayList<>();
-        for (var e : routes.getAll().values()) {
-            RouteDefinition r = e;
-            if (!r.npcIds().contains(npc.getId())) continue;
-
-            boolean allowedPerm = p.hasPermission("bettertradeconvoys.use");
-            if (!allowedPerm) continue;
-
-            list.add(r);
+        if (!p.hasPermission("bettertradeconvoys.use")) {
+            p.sendMessage(lang.get("errors.no_permission"));
+            return;
         }
+
+        List<RouteDefinition> list = new ArrayList<>(routes.getAll().values());
         if (list.isEmpty()) {
             p.sendMessage(lang.get("gui.no_routes_here"));
             return;
