@@ -1,7 +1,6 @@
 package me.luisgamedev.bettertradeconvoys.listeners;
 
 import me.luisgamedev.bettertradeconvoys.language.LanguageManager;
-import me.luisgamedev.bettertradeconvoys.model.RouteDefinition;
 import me.luisgamedev.bettertradeconvoys.service.ConvoyManager;
 import me.luisgamedev.bettertradeconvoys.service.RoutesConfig;
 import net.citizensnpcs.api.ai.event.NavigationCompleteEvent;
@@ -46,8 +45,9 @@ public class CitizensListeners implements Listener {
             return;
         }
 
-        boolean offered = routes.getAll().values().stream().anyMatch(r -> r.npcIds().contains(npc.getId()));
-        if (!offered) return;
+        if (routes.getAll().isEmpty()) {
+            return;
+        }
 
         manager.openRoutesGui(event.getClicker(), npc);
     }
