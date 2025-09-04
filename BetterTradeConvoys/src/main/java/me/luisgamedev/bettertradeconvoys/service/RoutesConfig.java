@@ -39,6 +39,10 @@ public class RoutesConfig {
             if (rs == null) continue;
 
             String idLower = id.toLowerCase(Locale.ROOT);
+            if (routes.containsKey(idLower)) {
+                plugin.getLogger().warning("Duplicate route id '" + id + "' found; skipping.");
+                continue;
+            }
             String display = rs.getString("display-name", id);
             String description = rs.getString("description", id);
             String worldName = rs.getString("waypoint-world", "world");
