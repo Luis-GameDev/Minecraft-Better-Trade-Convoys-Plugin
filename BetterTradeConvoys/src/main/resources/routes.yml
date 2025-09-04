@@ -32,3 +32,59 @@ routes:
     weekly-limit: 10
     monthly-limit: 40
     cooldown-seconds: 3600
+
+  gold_to_netherite:
+    display-name: "Gold → Netherite Run"
+    description: "Trade gold for netherite"
+    npc-ids: [0, 1, 2]
+    waypoint-world: "world"
+
+    speed: 1
+    follow-radius: 10
+    expire-seconds: 900
+
+    announce-start: true
+    trade-delay-seconds: 8
+
+    steps:
+      - { x: 150.5, y: 64.0, z: -30.5 }
+      - { x: 170.5, y: 64.0, z: -30.5 }
+      - { trade: true, message: "Smelting into netherite..." }
+      - { x: 190.5, y: 64.0, z: -15.5, message: "Netherite ready!" }
+
+    trades:
+      - input:  { material: GOLD_INGOT, amount: 20 }
+        output: { material: NETHERITE_INGOT, amount: 1 }
+
+    daily-limit: 3
+    weekly-limit: 10
+    monthly-limit: 40
+    cooldown-seconds: 3600
+
+  coal_to_emerald:
+    display-name: "Coal → Emerald Run"
+    description: "Swap coal for emeralds"
+    npc-ids: [0, 1, 2]
+    waypoint-world: "world"
+
+    speed: 1
+    follow-radius: 10
+    expire-seconds: 900
+
+    announce-start: true
+    trade-delay-seconds: 8
+
+    steps:
+      - { x: 200.5, y: 64.0, z: -30.5 }
+      - { x: 220.5, y: 64.0, z: -30.5 }
+      - { trade: true, message: "Let me count those pieces." }
+      - { x: 240.5, y: 64.0, z: -15.5, message: "Here are your emeralds!" }
+
+    trades:
+      - input:  { material: COAL, amount: 32 }
+        output: { material: EMERALD, amount: 8 }
+
+    daily-limit: 3
+    weekly-limit: 10
+    monthly-limit: 40
+    cooldown-seconds: 3600
