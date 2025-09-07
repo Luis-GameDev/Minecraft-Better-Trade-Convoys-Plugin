@@ -239,7 +239,8 @@ public class ConvoyManager {
             owner.sendMessage(ChatColor.translateAlternateColorCodes('&', msg));
         }
     }
-
+    // TODO: make sure npc is actually at final location, if not repeat step
+    // currently just walks the same path all the times and if he gets hit he takes the knockback as offset (arrives at the location with an offset)
     private void onArrivedAtFinal(NPC npc, ConvoyInstance inst, RouteDefinition rd) {
         exchangeAtDestination(inst, rd);
         waitingClaim.put(inst.getInstanceId(), true);
