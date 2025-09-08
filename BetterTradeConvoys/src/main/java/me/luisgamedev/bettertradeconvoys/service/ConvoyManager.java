@@ -77,7 +77,8 @@ public class ConvoyManager {
 
     public String startConvoy(Player owner, NPC npc, String routeId, TradeDefinition trade) {
         RouteDefinition rd = routes.getRoute(routeId);
-        if (rd == null) return lang.format("errors.unknown_route", lang.p("route", routeId));
+
+        if (rd == null) return lang.format("errors.unknown_route", lang.p("route", rd.displayName()));
 
         if (activeByNpcId.containsKey(npc.getId())) {
             return lang.get("errors.npc_busy");
@@ -85,26 +86,26 @@ public class ConvoyManager {
 
         int usedToday = progress.getStartsToday(owner.getUniqueId(), routeId);
         if (rd.dailyLimit() > 0 && usedToday >= rd.dailyLimit()) {
-            return lang.format("errors.daily_limit_reached", lang.p("route", routeId, "limit", rd.dailyLimit()));
+            return lang.format("errors.daily_limit_reached", lang.p("route", rd.displayName(), "limit", rd.dailyLimit()));
         }
         int usedWeek = progress.getStartsThisWeek(owner.getUniqueId(), routeId);
         if (rd.weeklyLimit() > 0 && usedWeek >= rd.weeklyLimit()) {
-            return lang.format("errors.weekly_limit_reached", lang.p("route", routeId, "limit", rd.weeklyLimit()));
+            return lang.format("errors.weekly_limit_reached", lang.p("route", rd.displayName(), "limit", rd.weeklyLimit()));
         }
         int usedMonth = progress.getStartsThisMonth(owner.getUniqueId(), routeId);
         if (rd.monthlyLimit() > 0 && usedMonth >= rd.monthlyLimit()) {
-            return lang.format("errors.monthly_limit_reached", lang.p("route", routeId, "limit", rd.monthlyLimit()));
+            return lang.format("errors.monthly_limit_reached", lang.p("route", rd.displayName(), "limit", rd.monthlyLimit()));
         }
 
         long last = progress.getLastStartMillis(owner.getUniqueId(), routeId);
         long now = System.currentTimeMillis();
         if (rd.cooldownSeconds() > 0 && (now - last) / 1000 < rd.cooldownSeconds()) {
             long remain = rd.cooldownSeconds() - ((now - last) / 1000);
-            return lang.format("errors.cooldown_active", lang.p("route", routeId, "seconds", remain));
+            return lang.format("errors.cooldown_active", lang.p("route", rd.displayName(), "seconds", remain));
         }
 
         if (rd.steps() == null || rd.steps().isEmpty()) {
-            return lang.format("errors.unknown_route", lang.p("route", routeId));
+            return lang.format("errors.unknown_route", lang.p("route", rd.displayName()));
         }
         Location start = null;
         int firstWpIdx = -1;
@@ -117,7 +118,7 @@ public class ConvoyManager {
             }
         }
         if (start == null || start.getWorld() == null) {
-            return lang.format("errors.unknown_route", lang.p("route", routeId));
+            return lang.format("errors.unknown_route", lang.p("route", rd.displayName()));
         }
 
         try {
