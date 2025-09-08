@@ -248,6 +248,7 @@ public class ConvoyManager {
             owner.sendMessage(ChatColor.translateAlternateColorCodes('&', msg));
         }
     }
+
     private void onArrivedAtFinal(NPC npc, ConvoyInstance inst, RouteDefinition rd) {
         exchangeAtDestination(inst, rd);
         waitingClaim.put(inst.getInstanceId(), true);
