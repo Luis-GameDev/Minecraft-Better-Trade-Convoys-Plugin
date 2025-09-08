@@ -217,6 +217,15 @@ public class ConvoyManager {
         if (inst.getPhase() == ConvoyPhase.GOING_TO_DEST) {
             int cur = stepIndexByInstance.getOrDefault(inst.getInstanceId(), 0);
             RouteStep step = rd.steps().get(cur);
+
+            if (step instanceof WaypointStep w) {
+                Location current = npc.getEntity().getLocation();
+                if (current.distance(w.getLoc()) > 0.5) {
+                    npc.getNavigator().setTarget(w.getLoc());
+                    return;
+                }
+            }
+
             sendStepMessage(inst, step);
 
             int next = findNextIndex(rd, cur);
@@ -239,8 +248,6 @@ public class ConvoyManager {
             owner.sendMessage(ChatColor.translateAlternateColorCodes('&', msg));
         }
     }
-    // TODO: make sure npc is actually at final location, if not repeat step
-    // currently just walks the same path all the times and if he gets hit he takes the knockback as offset (arrives at the location with an offset)
     private void onArrivedAtFinal(NPC npc, ConvoyInstance inst, RouteDefinition rd) {
         exchangeAtDestination(inst, rd);
         waitingClaim.put(inst.getInstanceId(), true);
