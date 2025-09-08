@@ -6,6 +6,7 @@ import me.luisgamedev.bettertradeconvoys.model.*;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.trait.CurrentLocation;
+import net.citizensnpcs.api.event.DespawnReason;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -78,7 +79,13 @@ public class ConvoyManager {
     public String startConvoy(Player owner, NPC npc, String routeId, TradeDefinition trade) {
         RouteDefinition rd = routes.getRoute(routeId);
 
-        if (rd == null) return lang.format("errors.unknown_route", lang.p("route", rd.displayName()));
+        // Route might not exist or might not be offered by this NPC.
+        if (rd == null) {
+            return lang.format("errors.unknown_route", lang.p("route", routeId));
+        }
+        if (!rd.npcIds().contains(npc.getId())) {
+            return lang.format("errors.unknown_route", lang.p("route", rd.displayName()));
+        }
 
         if ((trade.inputMoney() > 0 || trade.outputMoney() > 0) && plugin.economy() == null) {
             return lang.get("errors.vault_missing");
@@ -386,6 +393,8 @@ public class ConvoyManager {
     }
 
     public void onNpcDeath(NPC npc, Player killer) {
+        try { npc.despawn(DespawnReason.DEATH); } catch (Exception ignored) { }
+
         ConvoyInstance inst = activeByNpcId.get(npc.getId());
         if (inst == null) {
             Location home = npc.getStoredLocation();
@@ -422,12 +431,12 @@ public class ConvoyManager {
         try {
             if (home != null && home.getWorld() != null) {
                 Location target = home.clone();
-                Bukkit.getScheduler().runTask(plugin, () -> {
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     try {
-                        if (npc.isSpawned()) npc.despawn();
+                        if (npc.isSpawned()) npc.despawn(DespawnReason.PLUGIN);
                         npc.spawn(target);
                     } catch (Exception ignored) { }
-                });
+                }, 20L);
             }
         } catch (Exception ignored) { }
     }
@@ -633,7 +642,16 @@ public class ConvoyManager {
             return;
         }
 
-        List<RouteDefinition> list = new ArrayList<>(routes.getAll().values());
+        // Only show routes that are explicitly assigned to this NPC in the
+        // configuration. Previously every NPC listed all routes which allowed
+        // starting routes from the wrong NPC. Filter the route list based on
+        // the NPC's ID before opening the GUI.
+        List<RouteDefinition> list = new ArrayList<>();
+        for (RouteDefinition rd : routes.getAll().values()) {
+            if (rd.npcIds().contains(npc.getId())) {
+                list.add(rd);
+            }
+        }
         if (list.isEmpty()) {
             p.sendMessage(lang.get("gui.no_routes_here"));
             return;
