@@ -30,9 +30,9 @@ If you have any questions or need help, feel free to join my Discord: https://di
   - Enable/disable global start announcements.  
   - Define waypoints and routes via coordinates.
 
-- 📦 **Trade System**  
-  - Define **input → output trades** per route.  
-  - Supports **custom items** from other plugins (Oraxen, MMOItems, etc.) via API hooks.  
+- 📦 **Trade System**
+  - Define **input → output trades** per route.
+  - Supports **custom items** from other plugins (Oraxen, Nexo, ItemsAdder, Divinity, MMOCore) via API hooks.
 
 - 🔒 **Persistent Data**  
   - Progress, cooldowns, and claims survive restarts.  
@@ -69,6 +69,10 @@ routes:
     trades:
       - input:  { material: IRON_INGOT, amount: 20 }
         output: { material: DIAMOND,    amount: 10 }
+
+      # Custom item example using Oraxen & ItemsAdder
+      - input:  { plugin: oraxen, id: custom_iron, amount: 5 }
+        output: { plugin: itemsadder, id: my_items:diamond_crate, amount: 1 }
 
     daily-limit: 3
     weekly-limit: 10
