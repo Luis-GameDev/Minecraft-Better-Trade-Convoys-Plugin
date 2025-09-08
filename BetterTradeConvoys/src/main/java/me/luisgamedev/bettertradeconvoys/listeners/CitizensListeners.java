@@ -31,7 +31,8 @@ public class CitizensListeners implements Listener {
     @EventHandler
     public void onNpcDeath(NPCDeathEvent event) {
         if (event.getNPC() == null) return;
-        manager.onNpcDeath(event.getNPC());
+        Player killer = event.getEvent() != null ? event.getEvent().getEntity().getKiller() : null;
+        manager.onNpcDeath(event.getNPC(), killer);
     }
 
     @EventHandler

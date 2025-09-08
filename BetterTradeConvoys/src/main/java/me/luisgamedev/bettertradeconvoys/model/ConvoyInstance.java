@@ -14,6 +14,8 @@ public class ConvoyInstance {
     private ConvoyPhase phase;
     private int waypointIndex;
     private List<ItemStack> carried;
+    private double carriedMoney;
+    private double investedMoney;
 
     private long startedAt;
 
@@ -26,6 +28,8 @@ public class ConvoyInstance {
         this.waypointIndex = waypointIndex;
         this.carried = carried;
         this.startedAt = startedAt;
+        this.carriedMoney = 0.0;
+        this.investedMoney = 0.0;
     }
 
     public UUID getInstanceId() { return instanceId; }
@@ -41,6 +45,12 @@ public class ConvoyInstance {
 
     public List<ItemStack> getCarried() { return carried; }
     public void setCarried(List<ItemStack> carried) { this.carried = carried; }
+
+    public double getCarriedMoney() { return carriedMoney; }
+    public void setCarriedMoney(double carriedMoney) { this.carriedMoney = carriedMoney; }
+
+    public double getInvestedMoney() { return investedMoney; }
+    public void setInvestedMoney(double investedMoney) { this.investedMoney = investedMoney; }
 
     public long getStartedAt() { return startedAt; }
 }
