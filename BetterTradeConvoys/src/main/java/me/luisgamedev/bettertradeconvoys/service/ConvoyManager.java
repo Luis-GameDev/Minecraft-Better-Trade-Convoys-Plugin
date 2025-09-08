@@ -112,7 +112,8 @@ public class ConvoyManager {
         for (int i = 0; i < rd.steps().size(); i++) {
             RouteStep s = rd.steps().get(i);
             if (s instanceof WaypointStep w) {
-                start = w.getLoc();
+                // clone to avoid Citizens mutating the original Location instance
+                start = w.getLoc().clone();
                 firstWpIdx = i;
                 break;
             }
@@ -123,7 +124,8 @@ public class ConvoyManager {
 
         try {
             if (npc.isSpawned()) npc.despawn();
-            npc.spawn(start);
+            // spawn with a clone so the stored home Location remains unchanged
+            npc.spawn(start.clone());
             npc.getNavigator().getDefaultParameters().speedModifier((float) rd.speed());
         } catch (Throwable ignored) {}
 
@@ -145,7 +147,8 @@ public class ConvoyManager {
         npc.data().setPersistent(META_INSTANCE, instanceId.toString());
         activeByNpcId.put(npc.getId(), inst);
         activeByInstance.put(instanceId, inst);
-        homeByInstance.put(instanceId, start);
+        // store a clone as the home location to ensure respawns use the original start point
+        homeByInstance.put(instanceId, start.clone());
 
         int nextIdx = findNextIndex(rd, firstWpIdx);
         if (nextIdx == -1) nextIdx = firstWpIdx;
