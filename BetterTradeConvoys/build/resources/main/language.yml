@@ -13,6 +13,8 @@ errors:
   no_permission: "&cYou do not have permission to do that."
   invalid_hand_item: "&cHold the required item in your main hand."
   no_matching_trade: "&cNo matching trade for this item."
+  vault_missing: "&cVault with economy plugin is required for money trades."
+  not_enough_money: "&cYou need &e{amount}&c to start this route."
 
 info:
   started: "&aAll items received. Convoy starts!"

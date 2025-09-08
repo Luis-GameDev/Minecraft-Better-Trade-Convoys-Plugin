@@ -1,9 +1,9 @@
 name: BetterTradeConvoys
 main: me.luisgamedev.bettertradeconvoys.BetterTradeConvoys
-version: 1.0
+version: 1.1
 api-version: '1.20'
 website: 'https://github.com/Luis-GameDev'
-softdepend: [ Citizens ]
+softdepend: [ Citizens, Vault ]
 
 permissions:
   bettertradeconvoys.use:
