@@ -6,6 +6,7 @@ import me.luisgamedev.bettertradeconvoys.model.*;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.trait.CurrentLocation;
+import net.citizensnpcs.api.event.DespawnReason;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -386,6 +387,8 @@ public class ConvoyManager {
     }
 
     public void onNpcDeath(NPC npc, Player killer) {
+        try { npc.despawn(DespawnReason.DEATH); } catch (Exception ignored) { }
+
         ConvoyInstance inst = activeByNpcId.get(npc.getId());
         if (inst == null) {
             Location home = npc.getStoredLocation();
@@ -422,12 +425,12 @@ public class ConvoyManager {
         try {
             if (home != null && home.getWorld() != null) {
                 Location target = home.clone();
-                Bukkit.getScheduler().runTask(plugin, () -> {
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     try {
-                        if (npc.isSpawned()) npc.despawn();
+                        if (npc.isSpawned()) npc.despawn(DespawnReason.PLUGIN);
                         npc.spawn(target);
                     } catch (Exception ignored) { }
-                });
+                }, 20L);
             }
         } catch (Exception ignored) { }
     }
