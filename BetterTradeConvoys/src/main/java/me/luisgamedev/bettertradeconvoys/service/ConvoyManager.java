@@ -122,6 +122,13 @@ public class ConvoyManager {
             return lang.format("errors.unknown_route", lang.p("route", rd.displayName()));
         }
 
+        // remember the location the NPC originally stood at so it can be
+        // restored if the convoy fails or the NPC dies during the run
+        Location originalHome = null;
+        try {
+            originalHome = npc.getStoredLocation();
+        } catch (Throwable ignored) {}
+
         try {
             if (npc.isSpawned()) npc.despawn();
             // spawn with a clone so the stored home Location remains unchanged
@@ -147,8 +154,12 @@ public class ConvoyManager {
         npc.data().setPersistent(META_INSTANCE, instanceId.toString());
         activeByNpcId.put(npc.getId(), inst);
         activeByInstance.put(instanceId, inst);
-        // store a clone as the home location to ensure respawns use the original start point
-        homeByInstance.put(instanceId, start.clone());
+        // store a clone of the NPC's original position so it can be restored on death
+        if (originalHome != null) {
+            homeByInstance.put(instanceId, originalHome.clone());
+        } else {
+            homeByInstance.put(instanceId, start.clone());
+        }
 
         int nextIdx = findNextIndex(rd, firstWpIdx);
         if (nextIdx == -1) nextIdx = firstWpIdx;
