@@ -95,13 +95,25 @@ public class RoutesConfig {
                     plugin.getLogger().warning("Invalid trade entry in route '" + id + "'. Skipping this trade.");
                     continue;
                 }
-                ItemStack inStack = parseItem(in);
-                ItemStack outStack = parseItem(out);
-                if (inStack == null || outStack == null) {
+                ItemStack inStack = null;
+                double inMoney = 0.0;
+                if (in.containsKey("money")) {
+                    inMoney = toDouble(in.get("money"), 0.0);
+                } else {
+                    inStack = parseItem(in);
+                }
+                ItemStack outStack = null;
+                double outMoney = 0.0;
+                if (out.containsKey("money")) {
+                    outMoney = toDouble(out.get("money"), 0.0);
+                } else {
+                    outStack = parseItem(out);
+                }
+                if ((inStack == null && inMoney <= 0) || (outStack == null && outMoney <= 0)) {
                     plugin.getLogger().warning("Invalid trade items in route '" + id + "'. Skipping this trade.");
                     continue;
                 }
-                trades.add(new TradeDefinition(inStack, outStack));
+                trades.add(new TradeDefinition(inStack, outStack, inMoney, outMoney));
             }
 
             int dailyLimit = rs.getInt("daily-limit", 0);

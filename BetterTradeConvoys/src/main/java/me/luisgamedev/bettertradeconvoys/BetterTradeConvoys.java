@@ -9,6 +9,8 @@ import me.luisgamedev.bettertradeconvoys.service.PlayerProgressStore;
 import me.luisgamedev.bettertradeconvoys.service.RoutesConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+import net.milkbowl.vault.economy.Economy;
+import org.bukkit.plugin.RegisteredServiceProvider;
 
 import java.io.File;
 
@@ -18,6 +20,7 @@ public final class BetterTradeConvoys extends JavaPlugin {
     private RoutesConfig routesConfig;
     private PlayerProgressStore progressStore;
     private ConvoyManager convoyManager;
+    private Economy economy;
 
     @Override
     public void onEnable() {
@@ -31,6 +34,8 @@ public final class BetterTradeConvoys extends JavaPlugin {
         language = new LanguageManager(this); language.load();
         routesConfig = new RoutesConfig(this); routesConfig.load();
         progressStore = new PlayerProgressStore(this); progressStore.load();
+
+        setupEconomy();
 
         convoyManager = new ConvoyManager(this, routesConfig, progressStore, language);
         convoyManager.initCitizensCheck();
@@ -76,5 +81,23 @@ public final class BetterTradeConvoys extends JavaPlugin {
 
     public ConvoyManager convoys() {
         return convoyManager;
+    }
+
+    public Economy economy() {
+        return economy;
+    }
+
+    private void setupEconomy() {
+        if (getServer().getPluginManager().getPlugin("Vault") == null) {
+            getLogger().warning("Vault not found. Money trades disabled.");
+            return;
+        }
+        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        if (rsp == null) {
+            getLogger().warning("No economy provider found. Money trades disabled.");
+            return;
+        }
+        economy = rsp.getProvider();
+        getLogger().info("Hooked into economy: " + economy.getName());
     }
 }

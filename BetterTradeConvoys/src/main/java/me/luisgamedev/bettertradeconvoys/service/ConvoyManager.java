@@ -80,6 +80,15 @@ public class ConvoyManager {
 
         if (rd == null) return lang.format("errors.unknown_route", lang.p("route", rd.displayName()));
 
+        if ((trade.inputMoney() > 0 || trade.outputMoney() > 0) && plugin.economy() == null) {
+            return lang.get("errors.vault_missing");
+        }
+        if (trade.inputMoney() > 0 && plugin.economy() != null) {
+            if (!plugin.economy().has(owner, trade.inputMoney())) {
+                return lang.format("errors.not_enough_money", lang.p("amount", trade.inputMoney()));
+            }
+        }
+
         if (activeByNpcId.containsKey(npc.getId())) {
             return lang.get("errors.npc_busy");
         }
@@ -168,8 +177,17 @@ public class ConvoyManager {
         pausedByDistance.put(instanceId, false);
         waitingClaim.put(instanceId, false);
 
-        requiredInputByInstance.put(instanceId, trade.input().clone());
-        depositProgressByInstance.put(instanceId, 0);
+        if (trade.inputItem() != null) {
+            requiredInputByInstance.put(instanceId, trade.inputItem().clone());
+            depositProgressByInstance.put(instanceId, 0);
+        } else {
+            requiredInputByInstance.put(instanceId, null);
+            depositProgressByInstance.put(instanceId, 0);
+            if (trade.inputMoney() > 0 && plugin.economy() != null) {
+                plugin.economy().withdrawPlayer(owner, trade.inputMoney());
+                inst.setInvestedMoney(trade.inputMoney());
+            }
+        }
 
         if (rd.announceStart()) {
             Bukkit.broadcastMessage(lang.formatRaw("info.announced_start",
@@ -177,6 +195,9 @@ public class ConvoyManager {
         }
 
         startTicker(inst, npc, rd);
+        if (trade.inputItem() == null) {
+            navigateToCurrentStep(npc, inst, rd);
+        }
 
         progress.incStartsToday(owner.getUniqueId(), routeId);
         progress.incStartsThisWeek(owner.getUniqueId(), routeId);
@@ -279,17 +300,35 @@ public class ConvoyManager {
     private void exchangeAtDestination(ConvoyInstance inst, RouteDefinition rd) {
         if (inst.getPhase() != ConvoyPhase.GOING_TO_DEST) return;
         var carried = inst.getCarried();
-        if (carried.isEmpty()) { inst.setPhase(ConvoyPhase.EXCHANGED); return; }
-
-        ItemStack total = mergeStacks(carried);
-        for (TradeDefinition t : rd.trades()) {
-            if (t.input().getType() == total.getType() && t.input().getAmount() == total.getAmount()) {
-                inst.setCarried(Collections.singletonList(t.output().clone()));
-                inst.setPhase(ConvoyPhase.EXCHANGED);
-                return;
+        if (!carried.isEmpty()) {
+            ItemStack total = mergeStacks(carried);
+            for (TradeDefinition t : rd.trades()) {
+                if (t.inputItem() != null && t.inputItem().getType() == total.getType() && t.inputItem().getAmount() == total.getAmount()) {
+                    if (t.outputItem() != null) {
+                        inst.setCarried(Collections.singletonList(t.outputItem().clone()));
+                    } else if (t.outputMoney() > 0) {
+                        inst.setCarried(Collections.emptyList());
+                        inst.setCarriedMoney(t.outputMoney());
+                    }
+                    inst.setPhase(ConvoyPhase.EXCHANGED);
+                    return;
+                }
             }
+            inst.setPhase(ConvoyPhase.EXCHANGED);
+        } else {
+            for (TradeDefinition t : rd.trades()) {
+                if (t.inputMoney() > 0) {
+                    if (t.outputItem() != null) {
+                        inst.setCarried(Collections.singletonList(t.outputItem().clone()));
+                    } else if (t.outputMoney() > 0) {
+                        inst.setCarriedMoney(t.outputMoney());
+                    }
+                    inst.setPhase(ConvoyPhase.EXCHANGED);
+                    return;
+                }
+            }
+            inst.setPhase(ConvoyPhase.EXCHANGED);
         }
-        inst.setPhase(ConvoyPhase.EXCHANGED);
     }
 
     private ItemStack mergeStacks(List<ItemStack> list) {
@@ -315,6 +354,10 @@ public class ConvoyManager {
             return;
         }
 
+        if (plugin.economy() != null && inst.getCarriedMoney() > 0) {
+            plugin.economy().depositPlayer(p, inst.getCarriedMoney());
+            inst.setCarriedMoney(0);
+        }
         giveOrDrop(p, inst.getCarried());
         p.sendMessage(lang.get("info.claimed"));
 
@@ -324,6 +367,10 @@ public class ConvoyManager {
 
     private void onReturnedHome(NPC npc, ConvoyInstance inst, RouteDefinition rd) {
         Player owner = Bukkit.getPlayer(inst.getOwner());
+        if (plugin.economy() != null && inst.getCarriedMoney() > 0) {
+            plugin.economy().depositPlayer(owner != null ? owner : Bukkit.getOfflinePlayer(inst.getOwner()), inst.getCarriedMoney());
+            inst.setCarriedMoney(0);
+        }
         if (owner != null) {
             giveOrDrop(owner, inst.getCarried());
             owner.sendMessage(lang.format("info.completed_ready", lang.p("name", rd.displayName())));
@@ -338,7 +385,7 @@ public class ConvoyManager {
         removeInstanceOnly(npc, inst);
     }
 
-    public void onNpcDeath(NPC npc) {
+    public void onNpcDeath(NPC npc, Player killer) {
         ConvoyInstance inst = activeByNpcId.get(npc.getId());
         if (inst == null) {
             Location home = npc.getStoredLocation();
@@ -351,6 +398,11 @@ public class ConvoyManager {
         for (ItemStack it : inst.getCarried()) {
             if (it == null) continue;
             loc.getWorld().dropItemNaturally(loc, it.clone());
+        }
+
+        if (plugin.economy() != null && killer != null && inst.getInvestedMoney() > 0) {
+            plugin.economy().depositPlayer(killer, inst.getInvestedMoney());
+            inst.setInvestedMoney(0);
         }
 
         inst.setPhase(ConvoyPhase.FAILED);
@@ -497,14 +549,25 @@ public class ConvoyManager {
 
     private List<ItemStack> refundInput(ConvoyInstance inst, RouteDefinition rd) {
         var carried = inst.getCarried();
-        if (carried.isEmpty()) return Collections.emptyList();
-        var first = carried.get(0);
-        for (TradeDefinition t : rd.trades()) {
-            if (t.output().getType() == first.getType() && t.output().getAmount() == first.getAmount()) {
-                return Collections.singletonList(t.input().clone());
+        if (!carried.isEmpty()) {
+            var first = carried.get(0);
+            for (TradeDefinition t : rd.trades()) {
+                if (t.outputItem() != null && t.outputItem().getType() == first.getType() && t.outputItem().getAmount() == first.getAmount()) {
+                    if (t.inputItem() != null) {
+                        return Collections.singletonList(t.inputItem().clone());
+                    } else if (t.inputMoney() > 0 && plugin.economy() != null) {
+                        plugin.economy().depositPlayer(Bukkit.getOfflinePlayer(inst.getOwner()), t.inputMoney());
+                        return Collections.emptyList();
+                    }
+                }
             }
+            return new ArrayList<>(carried);
+        } else {
+            if (inst.getInvestedMoney() > 0 && plugin.economy() != null) {
+                plugin.economy().depositPlayer(Bukkit.getOfflinePlayer(inst.getOwner()), inst.getInvestedMoney());
+            }
+            return Collections.emptyList();
         }
-        return new ArrayList<>(carried);
     }
 
     private void giveOrDrop(Player p, List<ItemStack> items) {
@@ -600,9 +663,16 @@ public class ConvoyManager {
         int end = Math.min(start + GUI_PAGE_SIZE, state.getRoutes().size());
         for (int idx = start; idx < end; idx++) {
             RouteDefinition r = state.getRoutes().get(idx);
+            TradeDefinition t = !r.trades().isEmpty() ? r.trades().get(0) : null;
             ItemStack item;
-            if (!r.trades().isEmpty()) {
-                item = r.trades().get(0).input().clone();
+            if (t != null) {
+                if (t.inputItem() != null) {
+                    item = t.inputItem().clone();
+                } else if (t.outputItem() != null) {
+                    item = t.outputItem().clone();
+                } else {
+                    item = new ItemStack(Material.PAPER);
+                }
             } else {
                 item = new ItemStack(Material.PAPER);
             }
@@ -611,9 +681,13 @@ public class ConvoyManager {
                 meta.setDisplayName("§e" + r.displayName());
                 List<String> lore = new ArrayList<>();
                 lore.add("§7" + r.description());
-                if (!r.trades().isEmpty()) {
-                    ItemStack need = r.trades().get(0).input();
-                    lore.add("§7Needs: " + need.getAmount() + "x " + need.getType().name());
+                if (t != null) {
+                    if (t.inputItem() != null) {
+                        ItemStack need = t.inputItem();
+                        lore.add("§7Needs: " + need.getAmount() + "x " + need.getType().name());
+                    } else if (t.inputMoney() > 0) {
+                        lore.add("§7Needs: $" + t.inputMoney());
+                    }
                 }
                 meta.setLore(lore);
                 item.setItemMeta(meta);
