@@ -393,8 +393,6 @@ public class ConvoyManager {
     }
 
     public void onNpcDeath(NPC npc, Player killer) {
-        try { npc.despawn(DespawnReason.DEATH); } catch (Exception ignored) { }
-
         ConvoyInstance inst = activeByNpcId.get(npc.getId());
         if (inst == null) {
             Location home = npc.getStoredLocation();
