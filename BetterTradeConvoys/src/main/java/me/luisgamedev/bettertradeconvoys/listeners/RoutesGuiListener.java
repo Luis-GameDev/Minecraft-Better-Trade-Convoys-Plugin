@@ -57,24 +57,29 @@ public class RoutesGuiListener implements Listener {
         RouteDefinition rd = state.getRoutes().get(routeIndex);
         if (rd.trades().isEmpty()) return;
         TradeDefinition trade = rd.trades().get(0);
-        ItemStack need = trade.input().clone();
-        if (!p.getInventory().containsAtLeast(need, need.getAmount())) {
-            p.sendMessage(lang.format("deposit.wrong_item", lang.p("amount", need.getAmount(), "material", need.getType().name())));
-            return;
-        }
-
-        p.getInventory().removeItem(need.clone());
         NPC npc = state.getNpc();
-        String result = manager.startConvoy(p, npc, rd.id(), trade);
-        p.sendMessage(result);
-        if (result.contains(ChatColor.RED.toString())) {
-            p.getInventory().addItem(need);
-            return;
-        }
+        if (trade.inputItem() != null) {
+            ItemStack need = trade.inputItem().clone();
+            if (!p.getInventory().containsAtLeast(need, need.getAmount())) {
+                p.sendMessage(lang.format("deposit.wrong_item", lang.p("amount", need.getAmount(), "material", need.getType().name())));
+                return;
+            }
 
-        var inst = manager.getActiveByOwner(p.getUniqueId());
-        if (inst != null) {
-            manager.onOwnerDeposited(p, npc, inst, need);
+            p.getInventory().removeItem(need.clone());
+            String result = manager.startConvoy(p, npc, rd.id(), trade);
+            p.sendMessage(result);
+            if (result.contains(ChatColor.RED.toString())) {
+                p.getInventory().addItem(need);
+                return;
+            }
+
+            var inst = manager.getActiveByOwner(p.getUniqueId());
+            if (inst != null) {
+                manager.onOwnerDeposited(p, npc, inst, need);
+            }
+        } else {
+            String result = manager.startConvoy(p, npc, rd.id(), trade);
+            p.sendMessage(result);
         }
         p.closeInventory();
     }
