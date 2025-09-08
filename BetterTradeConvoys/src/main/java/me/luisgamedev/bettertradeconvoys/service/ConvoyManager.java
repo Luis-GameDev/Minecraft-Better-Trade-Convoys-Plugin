@@ -327,7 +327,9 @@ public class ConvoyManager {
     public void onNpcDeath(NPC npc) {
         ConvoyInstance inst = activeByNpcId.get(npc.getId());
         if (inst == null) {
-            resetNpcHomeLocation(npc, npc.getStoredLocation());
+            Location home = npc.getStoredLocation();
+            resetNpcHomeLocation(npc, home);
+            respawnNpc(home, npc);
             return;
         }
 
@@ -338,14 +340,30 @@ public class ConvoyManager {
         }
 
         inst.setPhase(ConvoyPhase.FAILED);
+
+        Location home = homeByInstance.get(inst.getInstanceId());
         removeInstanceOnly(npc, inst);
 
         Player owner = Bukkit.getPlayer(inst.getOwner());
         if (owner != null) owner.sendMessage(lang.get("info.died_lost"));
 
-        Location home = homeByInstance.get(inst.getInstanceId());
         if (home == null) home = npc.getStoredLocation();
         resetNpcHomeLocation(npc, home);
+        respawnNpc(home, npc);
+    }
+
+    private void respawnNpc(Location home, NPC npc) {
+        try {
+            if (home != null && home.getWorld() != null) {
+                Location target = home.clone();
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    try {
+                        if (npc.isSpawned()) npc.despawn();
+                        npc.spawn(target);
+                    } catch (Exception ignored) { }
+                });
+            }
+        } catch (Exception ignored) { }
     }
 
     private void teleportNpcHome(NPC npc, ConvoyInstance inst) {
