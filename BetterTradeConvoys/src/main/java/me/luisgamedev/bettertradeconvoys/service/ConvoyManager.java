@@ -79,7 +79,13 @@ public class ConvoyManager {
     public String startConvoy(Player owner, NPC npc, String routeId, TradeDefinition trade) {
         RouteDefinition rd = routes.getRoute(routeId);
 
-        if (rd == null) return lang.format("errors.unknown_route", lang.p("route", rd.displayName()));
+        // Route might not exist or might not be offered by this NPC.
+        if (rd == null) {
+            return lang.format("errors.unknown_route", lang.p("route", routeId));
+        }
+        if (!rd.npcIds().contains(npc.getId())) {
+            return lang.format("errors.unknown_route", lang.p("route", rd.displayName()));
+        }
 
         if ((trade.inputMoney() > 0 || trade.outputMoney() > 0) && plugin.economy() == null) {
             return lang.get("errors.vault_missing");
@@ -636,7 +642,16 @@ public class ConvoyManager {
             return;
         }
 
-        List<RouteDefinition> list = new ArrayList<>(routes.getAll().values());
+        // Only show routes that are explicitly assigned to this NPC in the
+        // configuration. Previously every NPC listed all routes which allowed
+        // starting routes from the wrong NPC. Filter the route list based on
+        // the NPC's ID before opening the GUI.
+        List<RouteDefinition> list = new ArrayList<>();
+        for (RouteDefinition rd : routes.getAll().values()) {
+            if (rd.npcIds().contains(npc.getId())) {
+                list.add(rd);
+            }
+        }
         if (list.isEmpty()) {
             p.sendMessage(lang.get("gui.no_routes_here"));
             return;
