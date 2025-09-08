@@ -95,15 +95,13 @@ public class RoutesConfig {
                     plugin.getLogger().warning("Invalid trade entry in route '" + id + "'. Skipping this trade.");
                     continue;
                 }
-                try {
-                    var inMat = Material.valueOf(String.valueOf(in.get("material")).toUpperCase(Locale.ROOT));
-                    int inAmt = toInt(in.get("amount"), 1);
-                    var outMat = Material.valueOf(String.valueOf(out.get("material")).toUpperCase(Locale.ROOT));
-                    int outAmt = toInt(out.get("amount"), 1);
-                    trades.add(new TradeDefinition(new ItemStack(inMat, inAmt), new ItemStack(outMat, outAmt)));
-                } catch (Exception ex) {
-                    plugin.getLogger().warning("Invalid trade materials in route '" + id + "': " + ex.getMessage());
+                ItemStack inStack = parseItem(in);
+                ItemStack outStack = parseItem(out);
+                if (inStack == null || outStack == null) {
+                    plugin.getLogger().warning("Invalid trade items in route '" + id + "'. Skipping this trade.");
+                    continue;
                 }
+                trades.add(new TradeDefinition(inStack, outStack));
             }
 
             int dailyLimit = rs.getInt("daily-limit", 0);
@@ -152,6 +150,33 @@ public class RoutesConfig {
 
     public Map<String, RouteDefinition> getAll() {
         return Collections.unmodifiableMap(routes);
+    }
+
+    private ItemStack parseItem(Map<?, ?> spec) {
+        if (spec.containsKey("material")) {
+            try {
+                Material mat = Material.valueOf(String.valueOf(spec.get("material")).toUpperCase(Locale.ROOT));
+                int amt = toInt(spec.get("amount"), 1);
+                return new ItemStack(mat, amt);
+            } catch (Exception ex) {
+                plugin.getLogger().warning("Invalid material '" + spec.get("material") + "': " + ex.getMessage());
+                return null;
+            }
+        }
+        if (spec.containsKey("plugin") && spec.containsKey("id")) {
+            String pluginName = String.valueOf(spec.get("plugin"));
+            String id = String.valueOf(spec.get("id"));
+            int amt = toInt(spec.get("amount"), 1);
+            ItemStack item = CustomItemSupport.getItem(pluginName, id);
+            if (item == null) {
+                plugin.getLogger().warning("Unknown custom item '" + id + "' for plugin '" + pluginName + "'");
+                return null;
+            }
+            item.setAmount(amt);
+            return item;
+        }
+        plugin.getLogger().warning("Invalid item specification: " + spec);
+        return null;
     }
 
     private static double toDouble(Object o, double def) {

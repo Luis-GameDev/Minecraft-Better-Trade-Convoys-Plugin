@@ -5,6 +5,7 @@ import me.luisgamedev.bettertradeconvoys.language.LanguageManager;
 import me.luisgamedev.bettertradeconvoys.model.*;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
+import net.citizensnpcs.trait.CurrentLocation;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -325,7 +326,7 @@ public class ConvoyManager {
     public void onNpcDeath(NPC npc) {
         ConvoyInstance inst = activeByNpcId.get(npc.getId());
         if (inst == null) {
-            respawnNpcHome(npc, npc.getStoredLocation());
+            resetNpcHomeLocation(npc, npc.getStoredLocation());
             return;
         }
 
@@ -343,7 +344,7 @@ public class ConvoyManager {
 
         Location home = homeByInstance.get(inst.getInstanceId());
         if (home == null) home = npc.getStoredLocation();
-        respawnNpcHome(npc, home);
+        resetNpcHomeLocation(npc, home);
     }
 
     private void teleportNpcHome(NPC npc, ConvoyInstance inst) {
@@ -357,11 +358,10 @@ public class ConvoyManager {
         } catch (Exception ignored) { }
     }
 
-    private void respawnNpcHome(NPC npc, Location home) {
+    private void resetNpcHomeLocation(NPC npc, Location home) {
         try {
             if (home != null && home.getWorld() != null) {
-                if (npc.isSpawned()) npc.despawn();
-                npc.spawn(home);
+                npc.getOrAddTrait(CurrentLocation.class).setLocation(home);
             }
         } catch (Exception ignored) { }
     }
