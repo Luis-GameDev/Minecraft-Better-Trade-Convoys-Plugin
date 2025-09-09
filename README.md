@@ -20,9 +20,9 @@ If you have any questions or need help, feel free to join my Discord: https://di
   - On death, they **drop the carried items**.  
   - Owners must protect their convoy if they want the rewards.
 
-- ⏳ **Limits & Cooldowns**  
-  - Configure **daily, weekly, and monthly limits** per route.  
-  - Route-specific **cooldowns** for each player.  
+- ⏳ **Limits & Cooldowns**
+  - Configure **daily, weekly, and monthly limits** per route (set to `-1` for unlimited).
+  - Route-specific **cooldowns** for each player.
 
 - 🛠 **Flexible Configuration**  
   - Define NPCs by **Citizens NPC-IDs**.  
