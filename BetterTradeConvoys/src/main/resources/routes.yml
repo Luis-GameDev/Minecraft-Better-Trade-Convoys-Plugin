@@ -28,6 +28,7 @@ routes:
       - input:  { material: IRON_INGOT, amount: 20 }
         output: { material: DIAMOND,    amount: 10 }
 
+    # Set limits to -1 to allow unlimited runs
     daily-limit: 3
     weekly-limit: 10
     monthly-limit: 40

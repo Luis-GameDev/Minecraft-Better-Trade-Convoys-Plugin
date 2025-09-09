@@ -101,15 +101,15 @@ public class ConvoyManager {
         }
 
         int usedToday = progress.getStartsToday(owner.getUniqueId(), routeId);
-        if (rd.dailyLimit() > 0 && usedToday >= rd.dailyLimit()) {
+        if (rd.dailyLimit() >= 0 && usedToday >= rd.dailyLimit()) {
             return lang.format("errors.daily_limit_reached", lang.p("route", rd.displayName(), "limit", rd.dailyLimit()));
         }
         int usedWeek = progress.getStartsThisWeek(owner.getUniqueId(), routeId);
-        if (rd.weeklyLimit() > 0 && usedWeek >= rd.weeklyLimit()) {
+        if (rd.weeklyLimit() >= 0 && usedWeek >= rd.weeklyLimit()) {
             return lang.format("errors.weekly_limit_reached", lang.p("route", rd.displayName(), "limit", rd.weeklyLimit()));
         }
         int usedMonth = progress.getStartsThisMonth(owner.getUniqueId(), routeId);
-        if (rd.monthlyLimit() > 0 && usedMonth >= rd.monthlyLimit()) {
+        if (rd.monthlyLimit() >= 0 && usedMonth >= rd.monthlyLimit()) {
             return lang.format("errors.monthly_limit_reached", lang.p("route", rd.displayName(), "limit", rd.monthlyLimit()));
         }
 
@@ -229,18 +229,17 @@ public class ConvoyManager {
             npc.getNavigator().setTarget(w.getLoc());
         } else if (step instanceof TradeStep) {
             sendStepMessage(inst, step);
-            handleTradePauseThenNext(npc, inst, rd);
+            handleTradePauseThenNext(npc, inst, rd, idx);
             return;
         }
         // For waypoint steps the message is sent once the NPC actually
         // arrives at the location in onNavigationComplete.
     }
 
-    private void handleTradePauseThenNext(NPC npc, ConvoyInstance inst, RouteDefinition rd) {
+    private void handleTradePauseThenNext(NPC npc, ConvoyInstance inst, RouteDefinition rd, int curIdx) {
         new BukkitRunnable() {
             @Override public void run() {
-                int cur = stepIndexByInstance.getOrDefault(inst.getInstanceId(), 0);
-                int next = findNextIndex(rd, cur);
+                int next = findNextIndex(rd, curIdx);
                 if (next == -1) {
                     onArrivedAtFinal(npc, inst, rd);
                 } else {
@@ -248,7 +247,7 @@ public class ConvoyManager {
                     navigateToCurrentStep(npc, inst, rd);
                 }
             }
-        }.runTaskLater(plugin, Math.max(0, rd.tradeDelaySeconds()) * 20L);
+        }.runTaskLater(plugin, Math.max(1, rd.tradeDelaySeconds() * 20L));
     }
 
     public void onNavigationComplete(NPC npc) {
