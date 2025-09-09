@@ -262,8 +262,13 @@ public class ConvoyManager {
             RouteStep step = rd.steps().get(cur);
 
             if (step instanceof WaypointStep w) {
-                Location current = npc.getEntity().getLocation();
-                if (current.distance(w.getLoc()) > 0.5) {
+                Location current;
+                try {
+                    current = npc.getEntity().getLocation();
+                } catch (Exception e) {
+                    current = w.getLoc();
+                }
+                if (current.distance(w.getLoc()) > 1.5) {
                     npc.getNavigator().setTarget(w.getLoc());
                     return;
                 }
@@ -395,6 +400,12 @@ public class ConvoyManager {
         ConvoyInstance inst = activeByNpcId.get(npc.getId());
         if (inst == null) {
             Location home = npc.getStoredLocation();
+            if (home == null) {
+                try {
+                    var entity = npc.getEntity();
+                    if (entity != null) home = entity.getLocation();
+                } catch (Exception ignored) {}
+            }
             resetNpcHomeLocation(npc, home);
             respawnNpc(home, npc);
             return;
@@ -430,6 +441,8 @@ public class ConvoyManager {
                 Location target = home.clone();
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     try {
+                        var entity = npc.getEntity();
+                        if (entity != null) entity.remove();
                         if (npc.isSpawned()) npc.despawn(DespawnReason.PLUGIN);
                         npc.spawn(target);
                     } catch (Exception ignored) { }
