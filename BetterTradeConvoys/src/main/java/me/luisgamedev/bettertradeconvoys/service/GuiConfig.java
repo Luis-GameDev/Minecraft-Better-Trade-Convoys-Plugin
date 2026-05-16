@@ -1,7 +1,6 @@
 package me.luisgamedev.bettertradeconvoys.service;
 
 import me.luisgamedev.bettertradeconvoys.BetterTradeConvoys;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
@@ -46,7 +45,7 @@ public class GuiConfig {
             ConfigurationSection ls = sec.getConfigurationSection(key);
             if (ls == null) continue;
             String id = key.toLowerCase(Locale.ROOT);
-            String title = color(ls.getString("title", "Routes"));
+            String title = plugin.language().parseToLegacy(ls.getString("title", "Routes"));
             int size = normalizeSize(ls.getInt("size", 54));
 
             ItemStack border = parseGuiItem(ls.getConfigurationSection("border-item"), Material.GRAY_STAINED_GLASS_PANE, " ", Collections.emptyList());
@@ -95,8 +94,6 @@ public class GuiConfig {
         return layouts.get(defaultLayout);
     }
 
-    private static String color(String s) { return ChatColor.translateAlternateColorCodes('&', s == null ? "" : s); }
-
     private static int normalizeSize(int size) {
         int s = Math.max(9, Math.min(54, size));
         return (s / 9) * 9;
@@ -135,9 +132,9 @@ public class GuiConfig {
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName(color(name));
+            meta.setDisplayName(plugin.language().parseToLegacy(name));
             List<String> translatedLore = new ArrayList<>();
-            for (String line : lore) translatedLore.add(color(line));
+            for (String line : lore) translatedLore.add(plugin.language().parseToLegacy(line));
             meta.setLore(translatedLore);
             applyCustomModelData(sec, meta);
             applyItemModel(sec, meta);

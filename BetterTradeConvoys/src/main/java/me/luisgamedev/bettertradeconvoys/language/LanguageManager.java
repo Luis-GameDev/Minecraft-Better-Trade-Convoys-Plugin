@@ -1,13 +1,14 @@
 package me.luisgamedev.bettertradeconvoys.language;
 
 import me.clip.placeholderapi.PlaceholderAPI;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 
 import java.io.File;
-import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,6 +17,9 @@ public class LanguageManager {
     private final Plugin plugin;
     private YamlConfiguration cfg;
     private String prefix = "";
+    private final MiniMessage miniMessage = MiniMessage.miniMessage();
+    private final LegacyComponentSerializer legacyAmp = LegacyComponentSerializer.legacyAmpersand();
+    private final LegacyComponentSerializer legacySection = LegacyComponentSerializer.legacySection();
 
     public LanguageManager(Plugin plugin) {
         this.plugin = plugin;
@@ -27,7 +31,7 @@ public class LanguageManager {
             plugin.saveResource("language.yml", false);
         }
         cfg = YamlConfiguration.loadConfiguration(f);
-        prefix = colorize(cfg.getString("prefix", "&6[BetterTradeConvoys]&r "));
+        prefix = toLegacy(cfg.getString("prefix", "&6[BetterTradeConvoys]&r "));
     }
 
     public String get(String path) {
@@ -36,8 +40,8 @@ public class LanguageManager {
 
     public String get(OfflinePlayer player, String path) {
         String v = cfg.getString(path);
-        if (v == null) return prefix + ChatColor.RED + "Missing lang key: " + path;
-        return prefix + applyPlaceholders(player, colorize(v));
+        if (v == null) return prefix + "§cMissing lang key: " + path;
+        return prefix + parseToLegacy(player, v);
     }
 
     public String getRaw(String path) {
@@ -47,7 +51,7 @@ public class LanguageManager {
     public String getRaw(OfflinePlayer player, String path) {
         String v = cfg.getString(path);
         if (v == null) return "Missing lang key: " + path;
-        return applyPlaceholders(player, colorize(v));
+        return parseToLegacy(player, v);
     }
 
     public String format(String path, Map<String, Object> placeholders) {
@@ -57,9 +61,8 @@ public class LanguageManager {
     public String format(OfflinePlayer player, String path, Map<String, Object> placeholders) {
         String base = cfg.getString(path);
         if (base == null) base = "Missing lang key: " + path;
-        String colored = colorize(base);
-        String withVars = replacePlaceholders(colored, placeholders);
-        return prefix + applyPlaceholders(player, withVars);
+        String withVars = replacePlaceholders(base, placeholders);
+        return prefix + parseToLegacy(player, withVars);
     }
 
     public String formatRaw(String path, Map<String, Object> placeholders) {
@@ -69,8 +72,7 @@ public class LanguageManager {
     public String formatRaw(OfflinePlayer player, String path, Map<String, Object> placeholders) {
         String base = cfg.getString(path);
         if (base == null) base = "Missing lang key: " + path;
-        String colored = colorize(base);
-        return applyPlaceholders(player, replacePlaceholders(colored, placeholders));
+        return parseToLegacy(player, replacePlaceholders(base, placeholders));
     }
 
     private String applyPlaceholders(OfflinePlayer player, String s) {
@@ -82,8 +84,31 @@ public class LanguageManager {
         }
     }
 
-    private String colorize(String s) {
-        return ChatColor.translateAlternateColorCodes('&', s == null ? "" : s);
+    public String parseToLegacy(OfflinePlayer player, String s) {
+        String parsed = s == null ? "" : s;
+        parsed = applyPlaceholders(player, parsed);
+        return toLegacy(parsed);
+    }
+
+    public String parseToLegacy(String s) {
+        return parseToLegacy(null, s);
+    }
+
+    public Component parseToComponent(OfflinePlayer player, String s) {
+        String parsed = s == null ? "" : s;
+        parsed = applyPlaceholders(player, parsed);
+        String normalized = parsed.replace('§', '&');
+        Component legacy = legacyAmp.deserialize(normalized);
+        String mini = miniMessage.serialize(legacy);
+        return miniMessage.deserialize(mini);
+    }
+
+    private String toLegacy(String s) {
+        if (s == null) return "";
+        String normalized = s.replace('§', '&');
+        Component legacy = legacyAmp.deserialize(normalized);
+        String mini = miniMessage.serialize(legacy);
+        return legacySection.serialize(miniMessage.deserialize(mini));
     }
 
     private String replacePlaceholders(String s, Map<String, Object> placeholders) {

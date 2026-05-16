@@ -8,7 +8,6 @@ import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.trait.CurrentLocation;
 import net.citizensnpcs.api.event.DespawnReason;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -224,6 +223,17 @@ public class ConvoyManager {
             sendStepMessage(inst, step);
             handleTradePauseThenNext(npc, inst, rd, idx);
             return;
+        } else if (step instanceof CommandStep c) {
+            runStepCommand(inst, c);
+            sendStepMessage(inst, step);
+            int next = findNextIndex(rd, idx);
+            if (next == -1) {
+                onArrivedAtFinal(npc, inst, rd);
+            } else {
+                stepIndexByInstance.put(inst.getInstanceId(), next);
+                navigateToCurrentStep(npc, inst, rd);
+            }
+            return;
         }
         // For waypoint steps the message is sent once the NPC actually
         // arrives at the location in onNavigationComplete.
@@ -290,7 +300,19 @@ public class ConvoyManager {
         if (msg == null || msg.isEmpty()) return;
         Player owner = Bukkit.getPlayer(inst.getOwner());
         if (owner != null) {
-            owner.sendMessage(ChatColor.translateAlternateColorCodes('&', msg));
+            owner.sendMessage(lang.parseToLegacy(owner, msg));
+        }
+    }
+
+    private void runStepCommand(ConvoyInstance inst, CommandStep step) {
+        String raw = step.getCommand();
+        if (raw == null || raw.isBlank()) return;
+        Player owner = Bukkit.getPlayer(inst.getOwner());
+        String command = lang.parseToLegacy(owner, raw).replace("§", "");
+        if (step.isAsConsole() || owner == null) {
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.startsWith("/") ? command.substring(1) : command);
+        } else {
+            owner.performCommand(command.startsWith("/") ? command.substring(1) : command);
         }
     }
 
@@ -882,9 +904,9 @@ public class ConvoyManager {
         ItemStack item = new ItemStack(route.guiItemMaterial() != null ? route.guiItemMaterial() : Material.PAPER);
         var meta = item.getItemMeta();
         if (meta == null) return item;
-        meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', route.guiItemName()));
+        meta.setDisplayName(lang.parseToLegacy(route.guiItemName()));
         List<String> lore = new ArrayList<>();
-        for (String line : route.guiItemLore()) lore.add(ChatColor.translateAlternateColorCodes('&', line));
+        for (String line : route.guiItemLore()) lore.add(lang.parseToLegacy(line));
         meta.setLore(lore);
         item.setItemMeta(meta);
         return item;
