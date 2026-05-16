@@ -104,7 +104,7 @@ public class ConvoyManager {
         long now = System.currentTimeMillis();
         if (rd.cooldownSeconds() > 0 && (now - last) / 1000 < rd.cooldownSeconds()) {
             long remain = rd.cooldownSeconds() - ((now - last) / 1000);
-            return lang.format("errors.cooldown_active", lang.p("route", rd.displayName(), "seconds", remain));
+            return lang.format(owner, "errors.cooldown_active", lang.p("route", rd.displayName(), "seconds", remain));
         }
 
         if (rd.steps() == null || rd.steps().isEmpty()) {
@@ -202,7 +202,7 @@ public class ConvoyManager {
         progress.incStartsThisMonth(owner.getUniqueId(), routeId);
         progress.setLastStartMillis(owner.getUniqueId(), routeId, now);
 
-        return lang.format("info.started", lang.p("name", rd.displayName()));
+        return lang.format(owner, "info.started", lang.p("name", rd.displayName()));
     }
 
     private int findNextIndex(RouteDefinition rd, int from) {
