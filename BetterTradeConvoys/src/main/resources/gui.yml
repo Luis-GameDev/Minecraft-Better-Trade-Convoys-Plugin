@@ -9,6 +9,8 @@ layouts:
       - '111111111'
       - '100000001'
       - '100000001'
+      - '100000001'
+      - '100000001'
       - '211111113'
 
     # Map any character in layout-pattern to a slot type.

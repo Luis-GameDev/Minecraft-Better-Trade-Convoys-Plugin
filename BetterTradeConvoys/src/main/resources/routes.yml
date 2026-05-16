@@ -90,9 +90,9 @@ routes:
     monthly-limit: 40
     cooldown-seconds: 3600
 
-  coal_to_emerald:
-    display-name: "Coal → Emerald Run"
-    description: "Swap coal for emeralds"
+  money_to_emerald:
+    display-name: "Money → Emerald Run"
+    description: "Swap money for emeralds"
     npc-ids: [0, 1, 2]
     waypoint-world: "world"
     gui-layout: "default"
@@ -124,7 +124,7 @@ routes:
       - { x: 140.5, y: 64.0, z: -15.5, message: "All done, heading back!" }    # Last Waypoint = End & Claim-Spot
 
     trades:
-      - input:  { material: COAL, amount: 32 }
+      - input:  { money: 1000 }
         output: { material: EMERALD, amount: 8 }
 
     daily-limit: 3
