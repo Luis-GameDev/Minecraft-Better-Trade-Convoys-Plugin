@@ -33,7 +33,7 @@ public class RoutesGuiListener implements Listener {
         event.setCancelled(true);
 
         int slot = event.getRawSlot();
-        if (slot == state.getLayout().prevSlot()) {
+        if (state.getLayout().prevSlots().contains(slot)) {
             if (state.getPage() > 0) {
                 state.setPage(state.getPage() - 1);
                 manager.renderRoutesGui(p, state);
@@ -41,7 +41,7 @@ public class RoutesGuiListener implements Listener {
             return;
         }
         int pageSize = state.getLayout().routeSlots().size();
-        if (slot == state.getLayout().nextSlot()) {
+        if (state.getLayout().nextSlots().contains(slot)) {
             if ((state.getPage() + 1) * pageSize < state.getRoutes().size()) {
                 state.setPage(state.getPage() + 1);
                 manager.renderRoutesGui(p, state);
@@ -90,4 +90,3 @@ public class RoutesGuiListener implements Listener {
         manager.closeRoutesGui(event.getPlayer().getUniqueId());
     }
 }
-

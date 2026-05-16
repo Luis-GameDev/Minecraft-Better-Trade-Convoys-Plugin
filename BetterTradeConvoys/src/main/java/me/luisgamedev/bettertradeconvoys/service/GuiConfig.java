@@ -50,28 +50,38 @@ public class GuiConfig {
             int size = normalizeSize(ls.getInt("size", 54));
 
             ItemStack border = parseGuiItem(ls.getConfigurationSection("border-item"), Material.GRAY_STAINED_GLASS_PANE, " ", Collections.emptyList());
-            ItemStack routeTemplate = parseGuiItem(ls.getConfigurationSection("route-item"), Material.PAPER, "&e{route_name}", Collections.singletonList("&7{route_description}"));
             ItemStack prev = parseGuiItem(ls.getConfigurationSection("prev-item"), Material.ARROW, "&ePrev", Collections.singletonList("&7Page {page}"));
             ItemStack next = parseGuiItem(ls.getConfigurationSection("next-item"), Material.ARROW, "&eNext", Collections.singletonList("&7Page {page}"));
-
-            int prevSlot = clampSlot(ls.getInt("prev-slot", 37), size);
-            int nextSlot = clampSlot(ls.getInt("next-slot", 43), size);
-
-            List<Integer> routeSlots = ls.getIntegerList("route-slots");
-            if (routeSlots == null || routeSlots.isEmpty()) {
-                routeSlots = defaultRouteSlots(size, prevSlot, nextSlot);
-            } else {
-                List<Integer> filtered = new ArrayList<>();
-                for (Integer s : routeSlots) {
-                    if (s == null) continue;
-                    int slot = clampSlot(s, size);
-                    if (slot == prevSlot || slot == nextSlot || filtered.contains(slot)) continue;
-                    filtered.add(slot);
+            List<String> pattern = ls.getStringList("layout-pattern");
+            List<Integer> borderSlots = new ArrayList<>();
+            List<Integer> routeSlots = new ArrayList<>();
+            List<Integer> prevSlots = new ArrayList<>();
+            List<Integer> nextSlots = new ArrayList<>();
+            if (pattern != null && !pattern.isEmpty()) {
+                size = normalizeSize(pattern.size() * 9);
+                ConfigurationSection slotTypes = ls.getConfigurationSection("slot-types");
+                for (int row = 0; row < pattern.size(); row++) {
+                    String line = pattern.get(row);
+                    for (int col = 0; col < Math.min(9, line.length()); col++) {
+                        char patternKey = line.charAt(col);
+                        int slot = row * 9 + col;
+                        String type = slotTypes != null ? slotTypes.getString(String.valueOf(patternKey), "") : "";
+                        if ("BORDER".equalsIgnoreCase(type) || patternKey == '1') borderSlots.add(slot);
+                        else if ("ROUTE".equalsIgnoreCase(type) || patternKey == '0') routeSlots.add(slot);
+                        else if ("PREV".equalsIgnoreCase(type) || patternKey == '2') prevSlots.add(slot);
+                        else if ("NEXT".equalsIgnoreCase(type) || patternKey == '3') nextSlots.add(slot);
+                    }
                 }
-                routeSlots = filtered;
+            } else {
+                int prevSlot = clampSlot(ls.getInt("prev-slot", 37), size);
+                int nextSlot = clampSlot(ls.getInt("next-slot", 43), size);
+                prevSlots.add(prevSlot);
+                nextSlots.add(nextSlot);
+                routeSlots = ls.getIntegerList("route-slots");
+                if (routeSlots == null || routeSlots.isEmpty()) routeSlots = defaultRouteSlots(size, prevSlot, nextSlot);
             }
 
-            layouts.put(id, new GuiLayout(id, title, size, border, routeTemplate, prev, next, prevSlot, nextSlot, routeSlots));
+            layouts.put(id, new GuiLayout(id, title, size, border, prev, next, routeSlots, borderSlots, prevSlots, nextSlots));
         }
 
         if (!layouts.containsKey(defaultLayout) && !layouts.isEmpty()) {
@@ -162,6 +172,7 @@ public class GuiConfig {
         }
     }
 
-    public record GuiLayout(String id, String title, int size, ItemStack borderItem, ItemStack routeItem,
-                            ItemStack prevItem, ItemStack nextItem, int prevSlot, int nextSlot, List<Integer> routeSlots) {}
+    public record GuiLayout(String id, String title, int size, ItemStack borderItem,
+                            ItemStack prevItem, ItemStack nextItem, List<Integer> routeSlots,
+                            List<Integer> borderSlots, List<Integer> prevSlots, List<Integer> nextSlots) {}
 }
