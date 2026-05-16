@@ -62,6 +62,12 @@ public class RoutesConfig {
                         if (map.containsKey("trade")) {
                             String msg = map.containsKey("message") ? String.valueOf(map.get("message")) : null;
                             steps.add(msg == null ? TradeStep.INSTANCE : new TradeStep(msg));
+                        } else if (map.containsKey("command")) {
+                            String command = String.valueOf(map.get("command"));
+                            String executor = map.containsKey("executor") ? String.valueOf(map.get("executor")) : "console";
+                            boolean asConsole = !executor.equalsIgnoreCase("player");
+                            String msg = map.containsKey("message") ? String.valueOf(map.get("message")) : null;
+                            steps.add(new CommandStep(command, asConsole, msg));
                         } else {
                             double x = toDouble(map.get("x"), 0.0);
                             double y = toDouble(map.get("y"), 64.0);

@@ -34,7 +34,8 @@ routes:
     steps:
       - { x: 100.5, y: 64.0, z: -30.5 }   # Start/Spawn & Home-Pos
       - { x: 120.5, y: 64.0, z: -30.5 }
-      - { trade: true, message: "Time to trade." }
+      - { trade: true, message: "<yellow>Time to trade.</yellow>" }
+      - { command: "say %player_name% finished the trade step!", executor: "console", message: "<green>Command step executed.</green>" }
       - { x: 140.5, y: 64.0, z: -15.5, message: "All done, heading back!" }    # Last Waypoint = End & Claim-Spot
 
     # Trade definition
@@ -78,7 +79,8 @@ routes:
     steps:
       - { x: 100.5, y: 64.0, z: -30.5 }   # Start/Spawn & Home-Pos
       - { x: 120.5, y: 64.0, z: -30.5 }
-      - { trade: true, message: "Time to trade." }
+      - { trade: true, message: "<yellow>Time to trade.</yellow>" }
+      - { command: "say %player_name% finished the trade step!", executor: "console", message: "<green>Command step executed.</green>" }
       - { x: 140.5, y: 64.0, z: -15.5, message: "All done, heading back!" }    # Last Waypoint = End & Claim-Spot
 
     trades:
@@ -120,7 +122,8 @@ routes:
     steps:
       - { x: 100.5, y: 64.0, z: -30.5 }   # Start/Spawn & Home-Pos
       - { x: 120.5, y: 64.0, z: -30.5 }
-      - { trade: true, message: "Time to trade." }
+      - { trade: true, message: "<yellow>Time to trade.</yellow>" }
+      - { command: "say %player_name% finished the trade step!", executor: "console", message: "<green>Command step executed.</green>" }
       - { x: 140.5, y: 64.0, z: -15.5, message: "All done, heading back!" }    # Last Waypoint = End & Claim-Spot
 
     trades:
