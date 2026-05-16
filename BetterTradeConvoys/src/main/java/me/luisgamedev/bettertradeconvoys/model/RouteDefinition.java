@@ -2,6 +2,7 @@ package me.luisgamedev.bettertradeconvoys.model;
 
 import java.util.List;
 import java.util.Set;
+import java.util.Collections;
 import org.bukkit.Material;
 
 public record RouteDefinition(
@@ -24,5 +25,11 @@ public record RouteDefinition(
         Material guiItemMaterial,
         Integer guiCustomModelData,
         String guiItemModel,
+        String guiItemName,
+        List<String> guiItemLore,
         Set<Integer> npcIds
-) { }
+) {
+    public List<String> guiItemLore() {
+        return guiItemLore == null ? Collections.emptyList() : guiItemLore;
+    }
+}

@@ -767,11 +767,15 @@ public class ConvoyManager {
 
         ItemStack glass = layout.borderItem().clone();
 
-        for (int i = 0; i < inv.getSize(); i++) {
-            int row = i / 9;
-            int col = i % 9;
-            if (row == 0 || row == (inv.getSize() / 9) - 1 || col == 0 || col == 8) {
-                inv.setItem(i, glass);
+        if (!layout.borderSlots().isEmpty()) {
+            for (int slot : layout.borderSlots()) {
+                if (slot >= 0 && slot < inv.getSize()) inv.setItem(slot, glass);
+            }
+        } else {
+            for (int i = 0; i < inv.getSize(); i++) {
+                int row = i / 9;
+                int col = i % 9;
+                if (row == 0 || row == (inv.getSize() / 9) - 1 || col == 0 || col == 8) inv.setItem(i, glass);
             }
         }
 
@@ -781,7 +785,7 @@ public class ConvoyManager {
         for (int idx = start; idx < end; idx++) {
             RouteDefinition r = state.getRoutes().get(idx);
             TradeDefinition t = !r.trades().isEmpty() ? r.trades().get(0) : null;
-            ItemStack item = layout.routeItem().clone();
+            ItemStack item = buildRouteGuiItem(r);
             applyRouteGuiModel(item, r);
             applyPlaceholders(item, buildRoutePlaceholders(r, t, state.getPage() + 1));
             int slot = layout.routeSlots().get(idx - start);
@@ -791,12 +795,12 @@ public class ConvoyManager {
         if (state.getPage() > 0) {
             ItemStack prev = layout.prevItem().clone();
             applyPlaceholders(prev, Map.of("{page}", String.valueOf(state.getPage() + 1)));
-            inv.setItem(layout.prevSlot(), prev);
+            for (int slot : layout.prevSlots()) if (slot >= 0 && slot < inv.getSize()) inv.setItem(slot, prev);
         }
         if ((state.getPage() + 1) * pageSize < state.getRoutes().size()) {
             ItemStack next = layout.nextItem().clone();
             applyPlaceholders(next, Map.of("{page}", String.valueOf(state.getPage() + 2)));
-            inv.setItem(layout.nextSlot(), next);
+            for (int slot : layout.nextSlots()) if (slot >= 0 && slot < inv.getSize()) inv.setItem(slot, next);
         }
 
         p.openInventory(inv);
@@ -872,6 +876,18 @@ public class ConvoyManager {
             }
         }
         item.setItemMeta(meta);
+    }
+
+    private ItemStack buildRouteGuiItem(RouteDefinition route) {
+        ItemStack item = new ItemStack(route.guiItemMaterial() != null ? route.guiItemMaterial() : Material.PAPER);
+        var meta = item.getItemMeta();
+        if (meta == null) return item;
+        meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', route.guiItemName()));
+        List<String> lore = new ArrayList<>();
+        for (String line : route.guiItemLore()) lore.add(ChatColor.translateAlternateColorCodes('&', line));
+        meta.setLore(lore);
+        item.setItemMeta(meta);
+        return item;
     }
 
 }

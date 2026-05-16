@@ -3,38 +3,21 @@ default-layout: default
 layouts:
   default:
     title: "&8Trade Convoy Routes"
-    size: 54 # Only multiples of 9
-    prev-slot: 37
-    next-slot: 43
+    size: 36 # fallback when layout-pattern is not defined
 
-    # Optional, if omitted default slots will be generated in the inner area.
-    route-slots:
-      - 10
-      - 11
-      - 12
-      - 13
-      - 14
-      - 15
-      - 16
-      - 19
-      - 20
-      - 21
-      - 22
-      - 23
-      - 24
-      - 25
-      - 28
-      - 29
-      - 30
-      - 31
-      - 32
-      - 33
-      - 34
-      - 38
-      - 39
-      - 40
-      - 41
-      - 42
+    layout-pattern:
+      - '111111111'
+      - '100000001'
+      - '100000001'
+      - '211111113'
+
+    # Map any character in layout-pattern to a slot type.
+    # Supported types: BORDER, ROUTE, PREV, NEXT
+    slot-types:
+      '0': ROUTE
+      '1': BORDER
+      '2': PREV
+      '3': NEXT
 
     border-item:
       material: GRAY_STAINED_GLASS_PANE
@@ -42,18 +25,6 @@ layouts:
       item-model: "minecraft:gray_stained_glass_pane"
       custom-model-data: 2001
       lore: []
-
-    route-item:
-      name: "&e{route_name}"
-      lore:
-        - "&7{route_description}"
-        - ""
-        - "&7Input Item: &f{input_item_amount}x {input_item_material}"
-        - "&7Input Money: &f${input_money}"
-        - "&7Output Item: &f{output_item_amount}x {output_item_material}"
-        - "&7Output Money: &f${output_money}"
-        - ""
-        - "&8Route ID: &7{route_id}"
 
     prev-item:
       material: ARROW

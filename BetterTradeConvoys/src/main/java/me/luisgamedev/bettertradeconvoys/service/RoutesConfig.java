@@ -131,6 +131,11 @@ public class RoutesConfig {
             }
             Integer guiCustomModelData = rs.contains("gui-custom-model-data") ? rs.getInt("gui-custom-model-data") : null;
             String guiItemModel = rs.getString("gui-item-model");
+            String guiItemName = rs.getString("gui-item-name", "&e{route_name}");
+            List<String> guiItemLore = rs.getStringList("gui-item-lore");
+            if (guiItemLore == null || guiItemLore.isEmpty()) {
+                guiItemLore = List.of("&7{route_description}");
+            }
 
             // npc-ids
             Set<Integer> npcIds = new HashSet<>();
@@ -161,6 +166,8 @@ public class RoutesConfig {
                     guiItemMaterial,
                     guiCustomModelData,
                     guiItemModel,
+                    guiItemName,
+                    guiItemLore,
                     npcIds
             );
 
