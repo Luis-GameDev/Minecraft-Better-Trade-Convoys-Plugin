@@ -781,25 +781,7 @@ public class ConvoyManager {
         for (int idx = start; idx < end; idx++) {
             RouteDefinition r = state.getRoutes().get(idx);
             TradeDefinition t = !r.trades().isEmpty() ? r.trades().get(0) : null;
-            ItemStack item;
-            if (t != null) {
-                if (t.inputItem() != null) {
-                    item = t.inputItem().clone();
-                } else if (t.outputItem() != null) {
-                    item = t.outputItem().clone();
-                } else {
-                    item = layout.routeItem().clone();
-                }
-            } else {
-                item = layout.routeItem().clone();
-            }
-            if (layout.routeItemUseTradeTexture() && t != null) {
-                if (t.inputItem() != null) {
-                    item.setType(t.inputItem().getType());
-                } else if (t.outputItem() != null) {
-                    item.setType(t.outputItem().getType());
-                }
-            }
+            ItemStack item = layout.routeItem().clone();
             applyRouteGuiModel(item, r);
             applyPlaceholders(item, buildRoutePlaceholders(r, t, state.getPage() + 1));
             int slot = layout.routeSlots().get(idx - start);
@@ -871,6 +853,7 @@ public class ConvoyManager {
     private void applyRouteGuiModel(ItemStack item, RouteDefinition route) {
         var meta = item.getItemMeta();
         if (meta == null) return;
+        item.setType(route.guiItemMaterial() != null ? route.guiItemMaterial() : Material.PAPER);
         if (route.guiCustomModelData() != null) meta.setCustomModelData(route.guiCustomModelData());
 
         if (route.guiItemModel() != null && !route.guiItemModel().isBlank()) {

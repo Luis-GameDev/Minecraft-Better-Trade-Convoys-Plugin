@@ -2,6 +2,7 @@ package me.luisgamedev.bettertradeconvoys.model;
 
 import java.util.List;
 import java.util.Set;
+import org.bukkit.Material;
 
 public record RouteDefinition(
         String id,
@@ -20,6 +21,7 @@ public record RouteDefinition(
         int tradeDelaySeconds,
         boolean announceStart,
         String guiLayout,
+        Material guiItemMaterial,
         Integer guiCustomModelData,
         String guiItemModel,
         Set<Integer> npcIds
