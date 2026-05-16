@@ -21,6 +21,7 @@ repositories {
         name = 'citizens-repo'
         url = 'https://maven.citizensnpcs.co/repo'
     }
+    maven { url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
     flatDir { dirs 'libs' }
 }
 
@@ -31,6 +32,7 @@ dependencies {
     compileOnly('net.citizensnpcs:citizens-main:2.0.35-SNAPSHOT') {
         exclude group: '*', module: '*'
     }
+    compileOnly 'me.clip:placeholderapi:2.11.6'
 }
 
 tasks.withType(JavaCompile).configureEach {

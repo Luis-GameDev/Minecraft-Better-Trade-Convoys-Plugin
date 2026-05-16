@@ -8,6 +8,7 @@ import me.luisgamedev.bettertradeconvoys.service.ConvoyManager;
 import me.luisgamedev.bettertradeconvoys.service.PlayerProgressStore;
 import me.luisgamedev.bettertradeconvoys.service.RoutesConfig;
 import me.luisgamedev.bettertradeconvoys.service.GuiConfig;
+import me.luisgamedev.bettertradeconvoys.placeholders.BetterTradeConvoysExpansion;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import net.milkbowl.vault.economy.Economy;
@@ -42,6 +43,10 @@ public final class BetterTradeConvoys extends JavaPlugin {
         setupEconomy();
 
         convoyManager = new ConvoyManager(this, routesConfig, progressStore, guiConfig, language);
+        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new BetterTradeConvoysExpansion(this).register();
+            getLogger().info("Hooked into PlaceholderAPI.");
+        }
         convoyManager.initCitizensCheck();
 
         Bukkit.getPluginManager().registerEvents(new CitizensListeners(convoyManager, language, routesConfig), this);

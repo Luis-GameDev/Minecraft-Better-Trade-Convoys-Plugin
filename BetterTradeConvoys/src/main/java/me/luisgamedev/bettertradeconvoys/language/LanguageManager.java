@@ -1,6 +1,8 @@
 package me.luisgamedev.bettertradeconvoys.language;
 
+import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 
@@ -29,30 +31,55 @@ public class LanguageManager {
     }
 
     public String get(String path) {
+        return get(null, path);
+    }
+
+    public String get(OfflinePlayer player, String path) {
         String v = cfg.getString(path);
         if (v == null) return prefix + ChatColor.RED + "Missing lang key: " + path;
-        return prefix + colorize(v);
+        return prefix + applyPlaceholders(player, colorize(v));
     }
 
     public String getRaw(String path) {
+        return getRaw(null, path);
+    }
+
+    public String getRaw(OfflinePlayer player, String path) {
         String v = cfg.getString(path);
         if (v == null) return "Missing lang key: " + path;
-        return colorize(v);
+        return applyPlaceholders(player, colorize(v));
     }
 
     public String format(String path, Map<String, Object> placeholders) {
+        return format(null, path, placeholders);
+    }
+
+    public String format(OfflinePlayer player, String path, Map<String, Object> placeholders) {
         String base = cfg.getString(path);
         if (base == null) base = "Missing lang key: " + path;
         String colored = colorize(base);
         String withVars = replacePlaceholders(colored, placeholders);
-        return prefix + withVars;
+        return prefix + applyPlaceholders(player, withVars);
     }
 
     public String formatRaw(String path, Map<String, Object> placeholders) {
+        return formatRaw(null, path, placeholders);
+    }
+
+    public String formatRaw(OfflinePlayer player, String path, Map<String, Object> placeholders) {
         String base = cfg.getString(path);
         if (base == null) base = "Missing lang key: " + path;
         String colored = colorize(base);
-        return replacePlaceholders(colored, placeholders);
+        return applyPlaceholders(player, replacePlaceholders(colored, placeholders));
+    }
+
+    private String applyPlaceholders(OfflinePlayer player, String s) {
+        if (plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") == null) return s;
+        try {
+            return PlaceholderAPI.setPlaceholders(player, s);
+        } catch (Throwable ignored) {
+            return s;
+        }
     }
 
     private String colorize(String s) {
