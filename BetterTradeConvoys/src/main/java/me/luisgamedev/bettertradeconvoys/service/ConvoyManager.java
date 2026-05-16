@@ -25,6 +25,7 @@ public class ConvoyManager {
     private final RoutesConfig routes;
     private final PlayerProgressStore progress;
     private final LanguageManager lang;
+    private final GuiConfig guiConfig;
 
     private final Map<Integer, ConvoyInstance> activeByNpcId = new HashMap<>();
     private final Map<UUID, ConvoyInstance> activeByInstance = new HashMap<>();
@@ -45,33 +46,15 @@ public class ConvoyManager {
     private final Map<UUID, Integer> depositProgressByInstance = new HashMap<>();
 
     // GUI handling
-    public static final String ROUTES_GUI_TITLE = "Routes";
-    public static final int GUI_PREV_SLOT = 37;
-    public static final int GUI_NEXT_SLOT = 43;
-    private static final List<Integer> ROUTE_SLOTS;
-
-    static {
-        List<Integer> tmp = new ArrayList<>();
-        for (int row = 1; row <= 4; row++) {
-            for (int col = 1; col <= 7; col++) {
-                int slot = row * 9 + col;
-                if (slot == GUI_PREV_SLOT || slot == GUI_NEXT_SLOT) continue;
-                tmp.add(slot);
-            }
-        }
-        ROUTE_SLOTS = Collections.unmodifiableList(tmp);
-    }
-
-    public static List<Integer> getRouteSlots() { return ROUTE_SLOTS; }
-    public static final int GUI_PAGE_SIZE = ROUTE_SLOTS.size();
 
     private final Map<UUID, RoutesGuiState> openRouteMenus = new HashMap<>();
 
-    public ConvoyManager(BetterTradeConvoys plugin, RoutesConfig routes, PlayerProgressStore progress, LanguageManager lang) {
+    public ConvoyManager(BetterTradeConvoys plugin, RoutesConfig routes, PlayerProgressStore progress, GuiConfig guiConfig, LanguageManager lang) {
         this.plugin = plugin;
         this.routes = routes;
         this.progress = progress;
         this.lang = lang;
+        this.guiConfig = guiConfig;
     }
 
     public void initCitizensCheck() {
@@ -735,16 +718,19 @@ public class ConvoyManager {
     public static class RoutesGuiState {
         private final NPC npc;
         private final List<RouteDefinition> routes;
+        private final GuiConfig.GuiLayout layout;
         private int page;
 
-        public RoutesGuiState(NPC npc, List<RouteDefinition> routes) {
+        public RoutesGuiState(NPC npc, List<RouteDefinition> routes, GuiConfig.GuiLayout layout) {
             this.npc = npc;
             this.routes = routes;
+            this.layout = layout;
             this.page = 0;
         }
 
         public NPC getNpc() { return npc; }
         public List<RouteDefinition> getRoutes() { return routes; }
+        public GuiConfig.GuiLayout getLayout() { return layout; }
         public int getPage() { return page; }
         public void setPage(int page) { this.page = page; }
     }
@@ -765,28 +751,31 @@ public class ConvoyManager {
             return;
         }
 
-        RoutesGuiState state = new RoutesGuiState(npc, list);
+        String layoutId = !list.isEmpty() ? list.get(0).guiLayout() : "default";
+        GuiConfig.GuiLayout layout = guiConfig.getLayoutOrDefault(layoutId);
+        if (layout == null) return;
+        RoutesGuiState state = new RoutesGuiState(npc, list, layout);
         openRouteMenus.put(p.getUniqueId(), state);
         renderRoutesGui(p, state);
     }
 
     public void renderRoutesGui(Player p, RoutesGuiState state) {
-        org.bukkit.inventory.Inventory inv = Bukkit.createInventory(null, 54, ROUTES_GUI_TITLE);
+        GuiConfig.GuiLayout layout = state.getLayout();
+        org.bukkit.inventory.Inventory inv = Bukkit.createInventory(null, layout.size(), layout.title());
 
-        ItemStack glass = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
-        var gm = glass.getItemMeta();
-        if (gm != null) { gm.setDisplayName(" "); glass.setItemMeta(gm); }
+        ItemStack glass = layout.borderItem().clone();
 
         for (int i = 0; i < inv.getSize(); i++) {
             int row = i / 9;
             int col = i % 9;
-            if (row == 0 || row == 5 || col == 0 || col == 8) {
+            if (row == 0 || row == (inv.getSize() / 9) - 1 || col == 0 || col == 8) {
                 inv.setItem(i, glass);
             }
         }
 
-        int start = state.getPage() * GUI_PAGE_SIZE;
-        int end = Math.min(start + GUI_PAGE_SIZE, state.getRoutes().size());
+        int pageSize = layout.routeSlots().size();
+        int start = state.getPage() * pageSize;
+        int end = Math.min(start + pageSize, state.getRoutes().size());
         for (int idx = start; idx < end; idx++) {
             RouteDefinition r = state.getRoutes().get(idx);
             TradeDefinition t = !r.trades().isEmpty() ? r.trades().get(0) : null;
@@ -797,44 +786,83 @@ public class ConvoyManager {
                 } else if (t.outputItem() != null) {
                     item = t.outputItem().clone();
                 } else {
-                    item = new ItemStack(Material.PAPER);
+                    item = layout.routeItem().clone();
                 }
             } else {
-                item = new ItemStack(Material.PAPER);
+                item = layout.routeItem().clone();
             }
-            var meta = item.getItemMeta();
-            if (meta != null) {
-                meta.setDisplayName("§e" + r.displayName());
-                List<String> lore = new ArrayList<>();
-                lore.add("§7" + r.description());
-                if (t != null) {
-                    if (t.inputItem() != null) {
-                        ItemStack need = t.inputItem();
-                        lore.add("§7Needs: " + need.getAmount() + "x " + need.getType().name());
-                    } else if (t.inputMoney() > 0) {
-                        lore.add("§7Needs: $" + t.inputMoney());
-                    }
+            if (layout.routeItemUseTradeTexture() && t != null) {
+                if (t.inputItem() != null) {
+                    item.setType(t.inputItem().getType());
+                } else if (t.outputItem() != null) {
+                    item.setType(t.outputItem().getType());
                 }
-                meta.setLore(lore);
-                item.setItemMeta(meta);
             }
-            int slot = ROUTE_SLOTS.get(idx - start);
+            applyPlaceholders(item, buildRoutePlaceholders(r, t, state.getPage() + 1));
+            int slot = layout.routeSlots().get(idx - start);
             inv.setItem(slot, item);
         }
 
         if (state.getPage() > 0) {
-            ItemStack prev = new ItemStack(Material.ARROW);
-            var pm = prev.getItemMeta();
-            if (pm != null) { pm.setDisplayName("§ePrev"); prev.setItemMeta(pm); }
-            inv.setItem(GUI_PREV_SLOT, prev);
+            ItemStack prev = layout.prevItem().clone();
+            applyPlaceholders(prev, Map.of("{page}", String.valueOf(state.getPage() + 1)));
+            inv.setItem(layout.prevSlot(), prev);
         }
-        if ((state.getPage() + 1) * GUI_PAGE_SIZE < state.getRoutes().size()) {
-            ItemStack next = new ItemStack(Material.ARROW);
-            var nm = next.getItemMeta();
-            if (nm != null) { nm.setDisplayName("§eNext"); next.setItemMeta(nm); }
-            inv.setItem(GUI_NEXT_SLOT, next);
+        if ((state.getPage() + 1) * pageSize < state.getRoutes().size()) {
+            ItemStack next = layout.nextItem().clone();
+            applyPlaceholders(next, Map.of("{page}", String.valueOf(state.getPage() + 2)));
+            inv.setItem(layout.nextSlot(), next);
         }
 
         p.openInventory(inv);
     }
+    private Map<String, String> buildRoutePlaceholders(RouteDefinition r, TradeDefinition t, int page) {
+        Map<String, String> ph = new HashMap<>();
+        ph.put("{route_id}", r.id());
+        ph.put("{route_name}", r.displayName());
+        ph.put("{route_description}", r.description());
+        ph.put("{page}", String.valueOf(page));
+
+        ph.put("{input_item_material}", "NONE");
+        ph.put("{input_item_amount}", "0");
+        ph.put("{output_item_material}", "NONE");
+        ph.put("{output_item_amount}", "0");
+        ph.put("{input_money}", "0");
+        ph.put("{output_money}", "0");
+
+        if (t != null) {
+            if (t.inputItem() != null) {
+                ph.put("{input_item_material}", t.inputItem().getType().name());
+                ph.put("{input_item_amount}", String.valueOf(t.inputItem().getAmount()));
+            }
+            if (t.outputItem() != null) {
+                ph.put("{output_item_material}", t.outputItem().getType().name());
+                ph.put("{output_item_amount}", String.valueOf(t.outputItem().getAmount()));
+            }
+            ph.put("{input_money}", String.valueOf(t.inputMoney()));
+            ph.put("{output_money}", String.valueOf(t.outputMoney()));
+        }
+        return ph;
+    }
+
+    private void applyPlaceholders(ItemStack item, Map<String, String> placeholders) {
+        var meta = item.getItemMeta();
+        if (meta == null) return;
+        if (meta.getDisplayName() != null) {
+            String name = meta.getDisplayName();
+            for (var entry : placeholders.entrySet()) name = name.replace(entry.getKey(), entry.getValue());
+            meta.setDisplayName(name);
+        }
+        if (meta.getLore() != null) {
+            List<String> lore = new ArrayList<>();
+            for (String line : meta.getLore()) {
+                String out = line;
+                for (var entry : placeholders.entrySet()) out = out.replace(entry.getKey(), entry.getValue());
+                lore.add(out);
+            }
+            meta.setLore(lore);
+        }
+        item.setItemMeta(meta);
+    }
+
 }
