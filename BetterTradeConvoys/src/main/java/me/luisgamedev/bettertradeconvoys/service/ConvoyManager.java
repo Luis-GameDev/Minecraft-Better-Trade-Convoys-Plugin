@@ -35,6 +35,10 @@ public class ConvoyManager {
     private final Map<UUID, Boolean> pausedByDistance = new HashMap<>();
     private final Map<UUID, Boolean> waitingClaim = new HashMap<>();
     private final Map<UUID, BukkitRunnable> tickers = new HashMap<>();
+    private final Map<UUID, Integer> movementRetryByInstance = new HashMap<>();
+    private final Map<UUID, Integer> stuckTicksByInstance = new HashMap<>();
+    private final Map<UUID, Location> lastPositionByInstance = new HashMap<>();
+    private final Map<UUID, Location> lastReachedWaypointByInstance = new HashMap<>();
 
     // Deposit-Flow
     private final Map<UUID, ItemStack> requiredInputByInstance = new HashMap<>();
@@ -183,6 +187,10 @@ public class ConvoyManager {
         expiresAtByInstance.put(instanceId, now + rd.expireSeconds() * 1000L);
         pausedByDistance.put(instanceId, false);
         waitingClaim.put(instanceId, false);
+        movementRetryByInstance.put(instanceId, 0);
+        stuckTicksByInstance.put(instanceId, 0);
+        lastPositionByInstance.put(instanceId, start.clone());
+        lastReachedWaypointByInstance.put(instanceId, start.clone());
 
         if (trade.inputItem() != null) {
             requiredInputByInstance.put(instanceId, trade.inputItem().clone());
@@ -272,6 +280,10 @@ public class ConvoyManager {
                     npc.getNavigator().setTarget(w.getLoc());
                     return;
                 }
+            }
+
+            if (step instanceof WaypointStep w) {
+                lastReachedWaypointByInstance.put(inst.getInstanceId(), w.getLoc().clone());
             }
 
             sendStepMessage(inst, step);
@@ -481,6 +493,10 @@ public class ConvoyManager {
         expiresAtByInstance.remove(id);
         pausedByDistance.remove(id);
         waitingClaim.remove(id);
+        movementRetryByInstance.remove(id);
+        stuckTicksByInstance.remove(id);
+        lastPositionByInstance.remove(id);
+        lastReachedWaypointByInstance.remove(id);
         requiredInputByInstance.remove(id);
         depositProgressByInstance.remove(id);
         homeByInstance.remove(id);
@@ -504,6 +520,10 @@ public class ConvoyManager {
         expiresAtByInstance.clear();
         pausedByDistance.clear();
         waitingClaim.clear();
+        movementRetryByInstance.clear();
+        stuckTicksByInstance.clear();
+        lastPositionByInstance.clear();
+        lastReachedWaypointByInstance.clear();
         requiredInputByInstance.clear();
         depositProgressByInstance.clear();
     }
@@ -559,11 +579,94 @@ public class ConvoyManager {
                         pausedByDistance.put(inst.getInstanceId(), false);
                         navigateToCurrentStep(npc, inst, rd);
                     }
+
+                    if (!tooFar && !paused && !waitingClaim.getOrDefault(inst.getInstanceId(), false)) {
+                        ensureConvoyMovement(npc, inst, rd);
+                    }
                 }
             }
         };
         r.runTaskTimer(plugin, 10L, 10L);
         tickers.put(inst.getInstanceId(), r);
+    }
+
+
+    private void ensureConvoyMovement(NPC npc, ConvoyInstance inst, RouteDefinition rd) {
+        UUID id = inst.getInstanceId();
+        Integer idx = stepIndexByInstance.get(id);
+        if (idx == null || idx < 0 || idx >= rd.steps().size()) return;
+
+        RouteStep step = rd.steps().get(idx);
+        if (!(step instanceof WaypointStep wp)) {
+            stuckTicksByInstance.put(id, 0);
+            movementRetryByInstance.put(id, 0);
+            return;
+        }
+
+        Location current;
+        try {
+            if (npc.getEntity() == null) return;
+            current = npc.getEntity().getLocation();
+        } catch (Throwable ignored) {
+            return;
+        }
+
+        Location previous = lastPositionByInstance.get(id);
+        lastPositionByInstance.put(id, current.clone());
+
+        double moved = previous != null && previous.getWorld() != null && current.getWorld() != null && previous.getWorld().equals(current.getWorld())
+                ? previous.distance(current)
+                : 0.0;
+        boolean atTarget = current.getWorld() != null && wp.getLoc().getWorld() != null && current.getWorld().equals(wp.getLoc().getWorld())
+                && current.distance(wp.getLoc()) <= 1.6;
+        boolean navigating;
+        try {
+            navigating = npc.getNavigator().isNavigating();
+        } catch (Throwable ignored) {
+            navigating = false;
+        }
+
+        if (atTarget) {
+            stuckTicksByInstance.put(id, 0);
+            movementRetryByInstance.put(id, 0);
+            return;
+        }
+
+        if (moved > 0.08 && navigating) {
+            stuckTicksByInstance.put(id, 0);
+            movementRetryByInstance.put(id, 0);
+            return;
+        }
+
+        int stuckTicks = stuckTicksByInstance.getOrDefault(id, 0) + 1;
+        stuckTicksByInstance.put(id, stuckTicks);
+
+        if (stuckTicks < 8) return;
+        stuckTicksByInstance.put(id, 0);
+
+        int retries = movementRetryByInstance.getOrDefault(id, 0) + 1;
+        movementRetryByInstance.put(id, retries);
+
+        if (retries <= 3) {
+            npc.getNavigator().cancelNavigation();
+            navigateToCurrentStep(npc, inst, rd);
+            return;
+        }
+
+        movementRetryByInstance.put(id, 0);
+        Location fallback = lastReachedWaypointByInstance.get(id);
+        if (fallback == null) fallback = wp.getLoc();
+        if (fallback != null && fallback.getWorld() != null) {
+            try {
+                npc.teleport(fallback.clone(), org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN);
+            } catch (Throwable ignored) {
+                try {
+                    if (npc.isSpawned()) npc.despawn();
+                    npc.spawn(fallback.clone());
+                } catch (Throwable ignored2) { }
+            }
+        }
+        navigateToCurrentStep(npc, inst, rd);
     }
 
     private List<ItemStack> refundInput(ConvoyInstance inst, RouteDefinition rd) {
