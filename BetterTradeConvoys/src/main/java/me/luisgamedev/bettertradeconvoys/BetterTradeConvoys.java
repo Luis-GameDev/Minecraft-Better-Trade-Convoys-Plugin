@@ -7,6 +7,7 @@ import me.luisgamedev.bettertradeconvoys.listeners.RoutesGuiListener;
 import me.luisgamedev.bettertradeconvoys.service.ConvoyManager;
 import me.luisgamedev.bettertradeconvoys.service.PlayerProgressStore;
 import me.luisgamedev.bettertradeconvoys.service.RoutesConfig;
+import me.luisgamedev.bettertradeconvoys.service.GuiConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import net.milkbowl.vault.economy.Economy;
@@ -19,6 +20,7 @@ public final class BetterTradeConvoys extends JavaPlugin {
     private LanguageManager language;
     private RoutesConfig routesConfig;
     private PlayerProgressStore progressStore;
+    private GuiConfig guiConfig;
     private ConvoyManager convoyManager;
     private Economy economy;
 
@@ -30,14 +32,16 @@ public final class BetterTradeConvoys extends JavaPlugin {
 
         saveDefaultIfMissing("routes.yml");
         saveDefaultIfMissing("language.yml");
+        saveDefaultIfMissing("gui.yml");
 
         language = new LanguageManager(this); language.load();
         routesConfig = new RoutesConfig(this); routesConfig.load();
         progressStore = new PlayerProgressStore(this); progressStore.load();
+        guiConfig = new GuiConfig(this); guiConfig.load();
 
         setupEconomy();
 
-        convoyManager = new ConvoyManager(this, routesConfig, progressStore, language);
+        convoyManager = new ConvoyManager(this, routesConfig, progressStore, guiConfig, language);
         convoyManager.initCitizensCheck();
 
         Bukkit.getPluginManager().registerEvents(new CitizensListeners(convoyManager, language, routesConfig), this);

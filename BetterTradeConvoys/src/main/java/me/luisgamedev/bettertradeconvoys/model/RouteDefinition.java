@@ -19,5 +19,6 @@ public record RouteDefinition(
         int expireSeconds,
         int tradeDelaySeconds,
         boolean announceStart,
+        String guiLayout,
         Set<Integer> npcIds
 ) { }

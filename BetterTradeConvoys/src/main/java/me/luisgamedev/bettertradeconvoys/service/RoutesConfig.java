@@ -121,6 +121,8 @@ public class RoutesConfig {
             int monthlyLimit = rs.getInt("monthly-limit", 0);
             int cooldown = rs.getInt("cooldown-seconds", 0);
 
+            String guiLayout = rs.getString("gui-layout", "default");
+
             // npc-ids
             Set<Integer> npcIds = new HashSet<>();
             for (Object o : rs.getList("npc-ids", Collections.emptyList())) {
@@ -146,6 +148,7 @@ public class RoutesConfig {
                     expireSeconds,
                     tradeDelaySeconds,
                     announceStart,
+                    guiLayout,
                     npcIds
             );
 

@@ -29,29 +29,30 @@ public class RoutesGuiListener implements Listener {
         if (!(event.getWhoClicked() instanceof Player p)) return;
         RoutesGuiState state = manager.getRoutesGui(p.getUniqueId());
         if (state == null) return;
-        if (!event.getView().getTitle().equals(ConvoyManager.ROUTES_GUI_TITLE)) return;
+        if (!event.getView().getTitle().equals(state.getLayout().title())) return;
         event.setCancelled(true);
 
         int slot = event.getRawSlot();
-        if (slot == ConvoyManager.GUI_PREV_SLOT) {
+        if (slot == state.getLayout().prevSlot()) {
             if (state.getPage() > 0) {
                 state.setPage(state.getPage() - 1);
                 manager.renderRoutesGui(p, state);
             }
             return;
         }
-        if (slot == ConvoyManager.GUI_NEXT_SLOT) {
-            if ((state.getPage() + 1) * ConvoyManager.GUI_PAGE_SIZE < state.getRoutes().size()) {
+        int pageSize = state.getLayout().routeSlots().size();
+        if (slot == state.getLayout().nextSlot()) {
+            if ((state.getPage() + 1) * pageSize < state.getRoutes().size()) {
                 state.setPage(state.getPage() + 1);
                 manager.renderRoutesGui(p, state);
             }
             return;
         }
 
-        if (!ConvoyManager.getRouteSlots().contains(slot)) return;
+        if (!state.getLayout().routeSlots().contains(slot)) return;
 
-        int indexInPage = ConvoyManager.getRouteSlots().indexOf(slot);
-        int routeIndex = state.getPage() * ConvoyManager.GUI_PAGE_SIZE + indexInPage;
+        int indexInPage = state.getLayout().routeSlots().indexOf(slot);
+        int routeIndex = state.getPage() * pageSize + indexInPage;
         if (routeIndex >= state.getRoutes().size()) return;
 
         RouteDefinition rd = state.getRoutes().get(routeIndex);
