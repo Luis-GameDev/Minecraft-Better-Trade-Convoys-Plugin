@@ -3,7 +3,7 @@ default-layout: default
 layouts:
   default:
     title: "&8Trade Convoy Routes"
-    size: 54
+    size: 54 # Only multiples of 9
     prev-slot: 37
     next-slot: 43
 
