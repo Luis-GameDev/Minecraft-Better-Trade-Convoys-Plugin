@@ -122,6 +122,8 @@ public class RoutesConfig {
             int cooldown = rs.getInt("cooldown-seconds", 0);
 
             String guiLayout = rs.getString("gui-layout", "default");
+            Integer guiCustomModelData = rs.contains("gui-custom-model-data") ? rs.getInt("gui-custom-model-data") : null;
+            String guiItemModel = rs.getString("gui-item-model");
 
             // npc-ids
             Set<Integer> npcIds = new HashSet<>();
@@ -149,6 +151,8 @@ public class RoutesConfig {
                     tradeDelaySeconds,
                     announceStart,
                     guiLayout,
+                    guiCustomModelData,
+                    guiItemModel,
                     npcIds
             );
 

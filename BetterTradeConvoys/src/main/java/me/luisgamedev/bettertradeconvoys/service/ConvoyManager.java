@@ -11,10 +11,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.lang.reflect.Method;
 import java.util.*;
 
 public class ConvoyManager {
@@ -798,6 +800,7 @@ public class ConvoyManager {
                     item.setType(t.outputItem().getType());
                 }
             }
+            applyRouteGuiModel(item, r);
             applyPlaceholders(item, buildRoutePlaceholders(r, t, state.getPage() + 1));
             int slot = layout.routeSlots().get(idx - start);
             inv.setItem(slot, item);
@@ -861,6 +864,29 @@ public class ConvoyManager {
                 lore.add(out);
             }
             meta.setLore(lore);
+        }
+        item.setItemMeta(meta);
+    }
+
+    private void applyRouteGuiModel(ItemStack item, RouteDefinition route) {
+        var meta = item.getItemMeta();
+        if (meta == null) return;
+        if (route.guiCustomModelData() != null) meta.setCustomModelData(route.guiCustomModelData());
+
+        if (route.guiItemModel() != null && !route.guiItemModel().isBlank()) {
+            NamespacedKey itemModel = NamespacedKey.fromString(route.guiItemModel().trim());
+            if (itemModel == null) {
+                plugin.getLogger().warning("Invalid gui-item-model key '" + route.guiItemModel() + "' in route '" + route.id() + "'");
+            } else {
+                try {
+                    Method setItemModel = meta.getClass().getMethod("setItemModel", NamespacedKey.class);
+                    setItemModel.invoke(meta, itemModel);
+                } catch (NoSuchMethodException ignored) {
+                    // Not available on this server version.
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Could not apply gui-item-model '" + route.guiItemModel() + "' for route '" + route.id() + "': " + e.getMessage());
+                }
+            }
         }
         item.setItemMeta(meta);
     }
