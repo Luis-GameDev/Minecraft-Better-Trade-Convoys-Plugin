@@ -652,10 +652,6 @@ public class ConvoyManager {
             return;
         }
 
-        // Only show routes that are explicitly assigned to this NPC in the
-        // configuration. Previously every NPC listed all routes which allowed
-        // starting routes from the wrong NPC. Filter the route list based on
-        // the NPC's ID before opening the GUI.
         List<RouteDefinition> list = new ArrayList<>();
         for (RouteDefinition rd : routes.getAll().values()) {
             if (rd.npcIds().contains(npc.getId())) {
@@ -663,7 +659,6 @@ public class ConvoyManager {
             }
         }
         if (list.isEmpty()) {
-            p.sendMessage(lang.get("gui.no_routes_here"));
             return;
         }
 

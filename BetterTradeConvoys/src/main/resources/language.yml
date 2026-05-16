@@ -31,9 +31,6 @@ npc:
   claim_hint_at_goal: "&7Right-click the NPC to claim your reward."
   status_rightclick_owner: "&7Convoy phase: &e{phase}"
 
-gui:
-  no_routes_here: "&7No routes available."
-
 deposit:
   progress: "&7Received &e{got}/{need}x {material}&7..."
   wrong_item: "&cThis route needs &e{amount}x {material}&c."

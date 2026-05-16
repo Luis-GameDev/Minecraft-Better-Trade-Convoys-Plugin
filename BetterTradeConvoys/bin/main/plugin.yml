@@ -1,0 +1,13 @@
+name: BetterTradeConvoys
+main: me.luisgamedev.bettertradeconvoys.BetterTradeConvoys
+version: 1.1
+api-version: '1.20'
+website: 'https://github.com/Luis-GameDev'
+softdepend: [ Citizens, Vault ]
+
+permissions:
+  bettertradeconvoys.use:
+    default: true
+  bettertradeconvoys.admin:
+    description: Admin permissions for reloading, debug, etc.
+    default: op
