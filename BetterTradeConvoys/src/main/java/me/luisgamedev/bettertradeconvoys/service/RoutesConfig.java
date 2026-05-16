@@ -122,6 +122,13 @@ public class RoutesConfig {
             int cooldown = rs.getInt("cooldown-seconds", 0);
 
             String guiLayout = rs.getString("gui-layout", "default");
+            Material guiItemMaterial = Material.PAPER;
+            String guiMaterialName = rs.getString("gui-item-material", "PAPER");
+            try {
+                guiItemMaterial = Material.valueOf(guiMaterialName.toUpperCase(Locale.ROOT));
+            } catch (Exception ex) {
+                plugin.getLogger().warning("Invalid gui-item-material '" + guiMaterialName + "' in route '" + id + "'. Falling back to PAPER.");
+            }
             Integer guiCustomModelData = rs.contains("gui-custom-model-data") ? rs.getInt("gui-custom-model-data") : null;
             String guiItemModel = rs.getString("gui-item-model");
 
@@ -151,6 +158,7 @@ public class RoutesConfig {
                     tradeDelaySeconds,
                     announceStart,
                     guiLayout,
+                    guiItemMaterial,
                     guiCustomModelData,
                     guiItemModel,
                     npcIds

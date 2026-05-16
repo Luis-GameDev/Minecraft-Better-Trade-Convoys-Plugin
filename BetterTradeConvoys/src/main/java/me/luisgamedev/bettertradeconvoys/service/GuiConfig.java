@@ -51,7 +51,6 @@ public class GuiConfig {
 
             ItemStack border = parseGuiItem(ls.getConfigurationSection("border-item"), Material.GRAY_STAINED_GLASS_PANE, " ", Collections.emptyList());
             ItemStack routeTemplate = parseGuiItem(ls.getConfigurationSection("route-item"), Material.PAPER, "&e{route_name}", Collections.singletonList("&7{route_description}"));
-            boolean useTradeTexture = ls.getBoolean("route-item-use-trade-texture", true);
             ItemStack prev = parseGuiItem(ls.getConfigurationSection("prev-item"), Material.ARROW, "&ePrev", Collections.singletonList("&7Page {page}"));
             ItemStack next = parseGuiItem(ls.getConfigurationSection("next-item"), Material.ARROW, "&eNext", Collections.singletonList("&7Page {page}"));
 
@@ -72,7 +71,7 @@ public class GuiConfig {
                 routeSlots = filtered;
             }
 
-            layouts.put(id, new GuiLayout(id, title, size, border, routeTemplate, useTradeTexture, prev, next, prevSlot, nextSlot, routeSlots));
+            layouts.put(id, new GuiLayout(id, title, size, border, routeTemplate, prev, next, prevSlot, nextSlot, routeSlots));
         }
 
         if (!layouts.containsKey(defaultLayout) && !layouts.isEmpty()) {
@@ -164,5 +163,5 @@ public class GuiConfig {
     }
 
     public record GuiLayout(String id, String title, int size, ItemStack borderItem, ItemStack routeItem,
-                            boolean routeItemUseTradeTexture, ItemStack prevItem, ItemStack nextItem, int prevSlot, int nextSlot, List<Integer> routeSlots) {}
+                            ItemStack prevItem, ItemStack nextItem, int prevSlot, int nextSlot, List<Integer> routeSlots) {}
 }

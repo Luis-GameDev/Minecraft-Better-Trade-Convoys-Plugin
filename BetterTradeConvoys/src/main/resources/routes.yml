@@ -8,6 +8,7 @@ routes:
     npc-ids: [0, 1, 2] # NPCs that should have the routes GUI when clicked
     waypoint-world: "world"
     gui-layout: "default"
+    gui-item-material: PAPER
     gui-item-model: "minecraft:paper"
     gui-custom-model-data: 1101
 
@@ -43,6 +44,7 @@ routes:
     npc-ids: [0, 1, 2]
     waypoint-world: "world"
     gui-layout: "default"
+    gui-item-material: PAPER
     gui-item-model: "minecraft:paper"
     gui-custom-model-data: 1102
 
@@ -74,6 +76,7 @@ routes:
     npc-ids: [0, 1, 2]
     waypoint-world: "world"
     gui-layout: "default"
+    gui-item-material: PAPER
     gui-item-model: "minecraft:paper"
     gui-custom-model-data: 1103
 

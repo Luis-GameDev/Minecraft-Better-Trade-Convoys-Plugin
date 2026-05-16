@@ -44,12 +44,7 @@ layouts:
       lore: []
 
     route-item:
-      material: PAPER
       name: "&e{route_name}"
-      # Optional: item-model uses a namespaced key (1.21.4+ API support).
-      item-model: "minecraft:paper"
-      # Optional: custom-model-data is supported on modern resource packs.
-      custom-model-data: 1001
       lore:
         - "&7{route_description}"
         - ""
