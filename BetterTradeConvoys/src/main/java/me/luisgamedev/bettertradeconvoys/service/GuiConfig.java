@@ -3,12 +3,14 @@ package me.luisgamedev.bettertradeconvoys.service;
 import me.luisgamedev.bettertradeconvoys.BetterTradeConvoys;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -128,9 +130,37 @@ public class GuiConfig {
             List<String> translatedLore = new ArrayList<>();
             for (String line : lore) translatedLore.add(color(line));
             meta.setLore(translatedLore);
+            applyCustomModelData(sec, meta);
+            applyItemModel(sec, meta);
             item.setItemMeta(meta);
         }
         return item;
+    }
+
+    private void applyCustomModelData(ConfigurationSection sec, ItemMeta meta) {
+        if (sec == null || !sec.contains("custom-model-data")) return;
+        int customModelData = sec.getInt("custom-model-data");
+        meta.setCustomModelData(customModelData);
+    }
+
+    private void applyItemModel(ConfigurationSection sec, ItemMeta meta) {
+        if (sec == null || !sec.contains("item-model")) return;
+        String rawItemModel = sec.getString("item-model");
+        if (rawItemModel == null || rawItemModel.isBlank()) return;
+        NamespacedKey itemModel = NamespacedKey.fromString(rawItemModel.trim());
+        if (itemModel == null) {
+            plugin.getLogger().warning("Invalid item-model key in gui.yml: " + rawItemModel);
+            return;
+        }
+
+        try {
+            Method setItemModel = meta.getClass().getMethod("setItemModel", NamespacedKey.class);
+            setItemModel.invoke(meta, itemModel);
+        } catch (NoSuchMethodException ignored) {
+            // Not available on this server version.
+        } catch (Exception e) {
+            plugin.getLogger().warning("Could not apply item-model '" + rawItemModel + "' from gui.yml: " + e.getMessage());
+        }
     }
 
     public record GuiLayout(String id, String title, int size, ItemStack borderItem, ItemStack routeItem,

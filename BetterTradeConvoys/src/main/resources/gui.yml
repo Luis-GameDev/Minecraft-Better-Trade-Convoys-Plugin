@@ -39,11 +39,17 @@ layouts:
     border-item:
       material: GRAY_STAINED_GLASS_PANE
       name: " "
+      item-model: "minecraft:gray_stained_glass_pane"
+      custom-model-data: 2001
       lore: []
 
     route-item:
       material: PAPER
       name: "&e{route_name}"
+      # Optional: item-model uses a namespaced key (1.21.4+ API support).
+      item-model: "minecraft:paper"
+      # Optional: custom-model-data is supported on modern resource packs.
+      custom-model-data: 1001
       lore:
         - "&7{route_description}"
         - ""
@@ -57,6 +63,8 @@ layouts:
     prev-item:
       material: ARROW
       name: "&ePrev"
+      item-model: "minecraft:arrow"
+      custom-model-data: 2002
       lore:
         - "&7Back to previous page"
         - "&8Page: {page}"
@@ -64,6 +72,8 @@ layouts:
     next-item:
       material: ARROW
       name: "&eNext"
+      item-model: "minecraft:arrow"
+      custom-model-data: 2003
       lore:
         - "&7Go to next page"
         - "&8Page: {page}"

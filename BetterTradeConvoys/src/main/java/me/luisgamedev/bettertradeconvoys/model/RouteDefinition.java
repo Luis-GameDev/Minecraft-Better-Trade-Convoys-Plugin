@@ -20,5 +20,7 @@ public record RouteDefinition(
         int tradeDelaySeconds,
         boolean announceStart,
         String guiLayout,
+        Integer guiCustomModelData,
+        String guiItemModel,
         Set<Integer> npcIds
 ) { }
