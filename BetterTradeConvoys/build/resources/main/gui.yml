@@ -1,0 +1,47 @@
+default-layout: default
+
+layouts:
+  default:
+    title: "&8Trade Convoy Routes"
+    size: 36 # fallback when layout-pattern is not defined
+
+    layout-pattern:
+      - '111111111'
+      - '100000001'
+      - '100000001'
+      - '100000001'
+      - '100000001'
+      - '211111113'
+
+    # Map any character in layout-pattern to a slot type.
+    # Supported types: BORDER, ROUTE, PREV, NEXT
+    slot-types:
+      '0': ROUTE
+      '1': BORDER
+      '2': PREV
+      '3': NEXT
+
+    border-item:
+      material: GRAY_STAINED_GLASS_PANE
+      name: " "
+      item-model: "minecraft:gray_stained_glass_pane"
+      custom-model-data: 2001
+      lore: []
+
+    prev-item:
+      material: ARROW
+      name: "&ePrev"
+      item-model: "minecraft:arrow"
+      custom-model-data: 2002
+      lore:
+        - "&7Back to previous page"
+        - "&8Page: {page}"
+
+    next-item:
+      material: ARROW
+      name: "&eNext"
+      item-model: "minecraft:arrow"
+      custom-model-data: 2003
+      lore:
+        - "&7Go to next page"
+        - "&8Page: {page}"

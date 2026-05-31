@@ -7,6 +7,20 @@ routes:
     description: "Trade iron for diamonds"
     npc-ids: [0, 1, 2] # NPCs that should have the routes GUI when clicked
     waypoint-world: "world"
+    gui-layout: "default"
+    gui-item-material: PAPER
+    gui-item-model: "minecraft:paper"
+    gui-custom-model-data: 1101
+    gui-item-name: "&e{route_name}"
+    gui-item-lore:
+      - "&7{route_description}"
+      - ""
+      - "&7Input Item: &f{input_item_amount}x {input_item_material}"
+      - "&7Input Money: &f${input_money}"
+      - "&7Output Item: &f{output_item_amount}x {output_item_material}"
+      - "&7Output Money: &f${output_money}"
+      - ""
+      - "&8Route ID: &7{route_id}"
 
     # Movement
     speed: 1                    # Citizens speedModifier (1.0 = normal)
@@ -20,7 +34,7 @@ routes:
     steps:
       - { x: 100.5, y: 64.0, z: -30.5 }   # Start/Spawn & Home-Pos
       - { x: 120.5, y: 64.0, z: -30.5 }
-      - { trade: true, message: "Time to trade." }
+      - { trade: true, message: "<yellow>Time to trade.</yellow>" }
       - { x: 140.5, y: 64.0, z: -15.5, message: "All done, heading back!" }    # Last Waypoint = End & Claim-Spot
 
     # Trade definition
@@ -39,6 +53,20 @@ routes:
     description: "Trade gold for netherite"
     npc-ids: [0, 1, 2]
     waypoint-world: "world"
+    gui-layout: "default"
+    gui-item-material: PAPER
+    gui-item-model: "minecraft:paper"
+    gui-custom-model-data: 1102
+    gui-item-name: "&e{route_name}"
+    gui-item-lore:
+      - "&7{route_description}"
+      - ""
+      - "&7Input Item: &f{input_item_amount}x {input_item_material}"
+      - "&7Input Money: &f${input_money}"
+      - "&7Output Item: &f{output_item_amount}x {output_item_material}"
+      - "&7Output Money: &f${output_money}"
+      - ""
+      - "&8Route ID: &7{route_id}"
 
     speed: 1
     follow-radius: 10
@@ -50,7 +78,8 @@ routes:
     steps:
       - { x: 100.5, y: 64.0, z: -30.5 }   # Start/Spawn & Home-Pos
       - { x: 120.5, y: 64.0, z: -30.5 }
-      - { trade: true, message: "Time to trade." }
+      - { trade: true, message: "<yellow>Time to trade.</yellow>" }
+      - { command: "say %player_name% finished the trade step!", executor: "console" }
       - { x: 140.5, y: 64.0, z: -15.5, message: "All done, heading back!" }    # Last Waypoint = End & Claim-Spot
 
     trades:
@@ -62,11 +91,25 @@ routes:
     monthly-limit: 40
     cooldown-seconds: 3600
 
-  coal_to_emerald:
-    display-name: "Coal → Emerald Run"
-    description: "Swap coal for emeralds"
+  money_to_emerald:
+    display-name: "Money → Emerald Run"
+    description: "Swap money for emeralds"
     npc-ids: [0, 1, 2]
     waypoint-world: "world"
+    gui-layout: "default"
+    gui-item-material: PAPER
+    gui-item-model: "minecraft:paper"
+    gui-custom-model-data: 1103
+    gui-item-name: "&e{route_name}"
+    gui-item-lore:
+      - "&7{route_description}"
+      - ""
+      - "&7Input Item: &f{input_item_amount}x {input_item_material}"
+      - "&7Input Money: &f${input_money}"
+      - "&7Output Item: &f{output_item_amount}x {output_item_material}"
+      - "&7Output Money: &f${output_money}"
+      - ""
+      - "&8Route ID: &7{route_id}"
 
     speed: 1
     follow-radius: 10
@@ -78,11 +121,11 @@ routes:
     steps:
       - { x: 100.5, y: 64.0, z: -30.5 }   # Start/Spawn & Home-Pos
       - { x: 120.5, y: 64.0, z: -30.5 }
-      - { trade: true, message: "Time to trade." }
+      - { trade: true, message: "<yellow>Time to trade.</yellow>" }
       - { x: 140.5, y: 64.0, z: -15.5, message: "All done, heading back!" }    # Last Waypoint = End & Claim-Spot
 
     trades:
-      - input:  { material: COAL, amount: 32 }
+      - input:  { money: 1000 }
         output: { material: EMERALD, amount: 8 }
 
     daily-limit: 3
