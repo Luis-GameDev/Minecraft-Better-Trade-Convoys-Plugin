@@ -97,18 +97,23 @@ public class LanguageManager {
     public Component parseToComponent(OfflinePlayer player, String s) {
         String parsed = s == null ? "" : s;
         parsed = applyPlaceholders(player, parsed);
-        String normalized = parsed.replace('§', '&');
-        Component legacy = legacyAmp.deserialize(normalized);
-        String mini = miniMessage.serialize(legacy);
-        return miniMessage.deserialize(mini);
+        return parseFormatting(parsed);
     }
 
     private String toLegacy(String s) {
         if (s == null) return "";
+        return legacySection.serialize(parseFormatting(s));
+    }
+
+    private Component parseFormatting(String s) {
         String normalized = s.replace('§', '&');
-        Component legacy = legacyAmp.deserialize(normalized);
-        String mini = miniMessage.serialize(legacy);
-        return legacySection.serialize(miniMessage.deserialize(mini));
+        try {
+            Component miniParsed = miniMessage.deserialize(normalized);
+            String legacy = legacySection.serialize(miniParsed).replace('§', '&');
+            return legacyAmp.deserialize(legacy);
+        } catch (RuntimeException ignored) {
+            return legacyAmp.deserialize(normalized);
+        }
     }
 
     private String replacePlaceholders(String s, Map<String, Object> placeholders) {
